@@ -15,6 +15,9 @@ material = "1.12.0"
 jetbrainsKotlinJvm = "2.1.20"
 mockk = "1.13.10"
 turbine = "1.2.0"
+dokka = "1.9.10"
+detekt = "1.23.8"
+kover = "0.9.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -36,3 +39,6 @@ turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 jetbrains-kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "jetbrainsKotlinJvm" }
+dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
+detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
+kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }

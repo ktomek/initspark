@@ -4,10 +4,10 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.jetbrains.kotlin.jvm)
+    alias(libs.plugins.dokka)
+    alias(libs.plugins.detekt)
+    alias(libs.plugins.kover)
     id("maven-publish")
-    id("io.gitlab.arturbosch.detekt")
-    id("org.jetbrains.dokka") version "1.9.10"
-    id("org.jetbrains.kotlinx.kover")
 }
 group = "com.github.ktomek"
 version = "1.0.0"
