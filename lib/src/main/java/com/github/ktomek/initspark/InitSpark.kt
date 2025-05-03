@@ -24,7 +24,7 @@ import kotlinx.coroutines.runBlocking
  * @property config List of declared spark initialization tasks.
  * @property scope CoroutineScope used for launching asynchronous tasks.
  */
-class InitSpark internal constructor(
+class InitSpark(
     private val config: SparkConfiguration,
     private val scope: CoroutineScope
 ) : SparkState {
@@ -75,10 +75,10 @@ class InitSpark internal constructor(
                     .declarations
                     .filter { it.type != AWAITABLE }
                     .forEach { sparkDeclaration ->
-                        this[sparkDeclaration.key] = sparkDeclaration.createJob(this)
+                        put(sparkDeclaration.key, sparkDeclaration.createJob(this))
                     }
+                this.forEach { it.value.start() }
             }
-            .onEach { (_, job) -> job.start() }
 
     private fun SparkDeclaration.createJob(jobs: Map<Key, Deferred<Unit>>): Deferred<Unit> =
         scope.async(
@@ -118,22 +118,5 @@ class InitSpark internal constructor(
                 .awaitAll()
             _isInitialized.update { true }
         }
-    }
-
-    companion object {
-        @Volatile
-        private var instance: InitSpark? = null
-
-        /**
-         * Factory method to obtain a singleton instance of InitSpark.
-         *
-         * @param config Configuration containing all spark declarations.
-         * @param scope Coroutine scope used for asynchronous operations.
-         * @return a singleton instance of InitSpark.
-         */
-        fun getInstance(config: SparkConfiguration, scope: CoroutineScope): InitSpark =
-            instance ?: synchronized(this) {
-                instance ?: InitSpark(config, scope).also { instance = it }
-            }
     }
 }
