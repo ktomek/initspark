@@ -33,7 +33,7 @@ class BuildSparksTest {
                 SparkDeclaration(
                     key = "warmup",
                     needs = emptySet(),
-                    type = SparkType.DEFAULT,
+                    type = SparkType.FIRE_AND_FORGET,
                     coroutineContext = EmptyCoroutineContext,
                     spark = warmup
                 ),

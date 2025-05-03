@@ -6,6 +6,6 @@ import kotlinx.coroutines.flow.StateFlow
  * Exposes app‑wide init state: `false` until all Awaitable initializers are done, then `true`.
  */
 interface SparkState {
-    val isTrackAbleInitialized: StateFlow<Boolean>
+    val isTrackableInitialized: StateFlow<Boolean>
     val isInitialized: StateFlow<Boolean>
 }

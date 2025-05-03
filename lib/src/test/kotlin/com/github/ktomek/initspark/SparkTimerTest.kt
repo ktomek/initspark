@@ -94,7 +94,7 @@ class SparkTimerTest {
             val provider = FakeTimeProvider(marks)
             val timer = SparkTimer(provider)
             val spark1 = testDeclaration("X", SparkType.TRACKABLE)
-            val spark2 = testDeclaration("Y", SparkType.DEFAULT)
+            val spark2 = testDeclaration("Y", SparkType.FIRE_AND_FORGET)
             val spark3 = testDeclaration("Y", SparkType.TRACKABLE)
 
             timer.start(spark1)
@@ -106,7 +106,7 @@ class SparkTimerTest {
 
             val windows = timer.windowByType()
             assertEquals(35.milliseconds, windows[SparkType.TRACKABLE])
-            assertEquals(20.milliseconds, windows[SparkType.DEFAULT])
+            assertEquals(20.milliseconds, windows[SparkType.FIRE_AND_FORGET])
         }
 
     @Test
@@ -119,10 +119,10 @@ class SparkTimerTest {
         )
         val provider = FakeTimeProvider(marks)
         val timer = SparkTimer(provider)
-        val spark1 = testDeclaration("A", SparkType.DEFAULT)
+        val spark1 = testDeclaration("A", SparkType.FIRE_AND_FORGET)
         val spark2 = testDeclaration("B", SparkType.TRACKABLE)
         val spark3 = testDeclaration("C", SparkType.TRACKABLE)
-        val spark4 = testDeclaration("D", SparkType.DEFAULT)
+        val spark4 = testDeclaration("D", SparkType.FIRE_AND_FORGET)
 
         timer.start(spark1)
         timer.stop(spark1)

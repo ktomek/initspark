@@ -55,14 +55,6 @@ val duration = initSpark.timing.get(mySpark)
 val totalTime = initSpark.timing.total()
 ```
 
-## Publishing
-
-To install locally:
-
-```bash
-./gradlew publishToMavenLocal
-```
-
 ## Contributing
 
 Contributions are welcome!  

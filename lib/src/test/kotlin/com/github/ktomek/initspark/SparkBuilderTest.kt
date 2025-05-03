@@ -63,7 +63,7 @@ class SparkBuilderTest {
             SparkDeclaration(
                 key = key,
                 needs = emptySet(),
-                type = SparkType.DEFAULT,
+                type = SparkType.FIRE_AND_FORGET,
                 coroutineContext = EmptyCoroutineContext,
                 spark = spark
             ),
@@ -126,7 +126,7 @@ class SparkBuilderTest {
             SparkDeclaration(
                 key = key,
                 needs = emptySet(),
-                type = SparkType.DEFAULT,
+                type = SparkType.FIRE_AND_FORGET,
                 coroutineContext = EmptyCoroutineContext,
                 spark = spark
             ),

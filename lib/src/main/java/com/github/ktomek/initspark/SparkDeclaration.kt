@@ -1,5 +1,6 @@
 package com.github.ktomek.initspark
 
+import com.github.ktomek.initspark.SparkType.FIRE_AND_FORGET
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
 
@@ -20,7 +21,7 @@ data class SparkDeclaration
 internal constructor(
     val key: Key,
     val needs: Set<Key> = emptySet(),
-    val type: SparkType = SparkType.DEFAULT,
+    val type: SparkType = FIRE_AND_FORGET,
     val coroutineContext: CoroutineContext = EmptyCoroutineContext,
     val spark: Spark
 )
@@ -30,10 +31,10 @@ internal constructor(
  *
  * - [AWAITABLE]: Executed sequentially in a blocking manner.
  * - [TRACKABLE]: Runs asynchronously and updates state once complete.
- * - [DEFAULT]: Fire-and-forget execution without tracking.
+ * - [FIRE_AND_FORGET]: Fire-and-forget execution without tracking.
  */
 enum class SparkType {
     AWAITABLE,
     TRACKABLE,
-    DEFAULT
+    FIRE_AND_FORGET
 }

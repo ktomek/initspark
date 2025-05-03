@@ -1,23 +1,28 @@
 package com.github.ktomek.initspark
 
+import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.coVerifyOrder
 import io.mockk.mockk
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
+import org.junit.jupiter.api.Assertions.assertFalse
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.test.Test
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class InitSparkTest {
 
     @Test
-    fun `GIVEN config with all spark types WHEN initialize called THEN all sparks run and state updated`() =
+    fun `GIVEN config with all spark types WHEN initialize called THEN all sparks run`() =
         runTest {
             val awaitableSpark = mockk<Spark>(relaxed = true)
             val trackableSpark = mockk<Spark>(relaxed = true)
@@ -42,7 +47,7 @@ class InitSparkTest {
                     SparkDeclaration(
                         "default",
                         emptySet(),
-                        SparkType.DEFAULT,
+                        SparkType.FIRE_AND_FORGET,
                         EmptyCoroutineContext,
                         defaultSpark
                     )
@@ -57,7 +62,60 @@ class InitSparkTest {
             coVerify { awaitableSpark.invoke() }
             coVerify { trackableSpark.invoke() }
             coVerify { defaultSpark.invoke() }
-            assertTrue(initSpark.isTrackAbleInitialized.first())
+        }
+
+    @Test
+    fun `GIVEN config with all spark types WHEN initialize called THEN state updated`() =
+        runTest {
+            val awaitableSpark = mockk<Spark>(relaxed = true)
+            val trackableSpark = mockk<Spark> {
+                coEvery { this@mockk.invoke() } coAnswers { delay(100) }
+            }
+            val spark = mockk<Spark> {
+                coEvery { this@mockk.invoke() } coAnswers { delay(200) }
+            }
+
+            val config = SparkConfiguration(
+                listOf(
+                    SparkDeclaration(
+                        "await",
+                        emptySet(),
+                        SparkType.AWAITABLE,
+                        EmptyCoroutineContext,
+                        awaitableSpark
+                    ),
+                    SparkDeclaration(
+                        "track",
+                        emptySet(),
+                        SparkType.TRACKABLE,
+                        EmptyCoroutineContext,
+                        trackableSpark
+                    ),
+                    SparkDeclaration(
+                        "default",
+                        emptySet(),
+                        SparkType.FIRE_AND_FORGET,
+                        EmptyCoroutineContext,
+                        spark
+                    )
+                )
+            )
+
+            val initSpark = InitSpark(config, this)
+
+            initSpark.initialize()
+            coVerify { awaitableSpark.invoke() }
+            assertFalse(initSpark.isTrackableInitialized.first())
+            assertFalse(initSpark.isInitialized.first())
+
+            advanceTimeBy(110.milliseconds)
+            coVerify { trackableSpark.invoke() }
+            assertTrue(initSpark.isTrackableInitialized.first())
+            assertFalse(initSpark.isInitialized.first())
+
+            advanceTimeBy(110.milliseconds)
+            coVerify { spark.invoke() }
+            assertTrue(initSpark.isTrackableInitialized.first())
             assertTrue(initSpark.isInitialized.first())
         }
 
@@ -112,7 +170,7 @@ class InitSparkTest {
             val initSpark = InitSpark(config, CoroutineScope(Dispatchers.Default))
 
             initSpark.initialize()
-            assertTrue(initSpark.isTrackAbleInitialized.first())
+            assertTrue(initSpark.isTrackableInitialized.first())
         }
 
     @Test
@@ -124,7 +182,7 @@ class InitSparkTest {
                     SparkDeclaration(
                         "d",
                         emptySet(),
-                        SparkType.DEFAULT,
+                        SparkType.FIRE_AND_FORGET,
                         EmptyCoroutineContext,
                         spark
                     )
@@ -192,7 +250,7 @@ class InitSparkTest {
                         EmptyCoroutineContext,
                         a
                     ),
-                    SparkDeclaration("b", setOf("dep"), SparkType.DEFAULT, EmptyCoroutineContext, b)
+                    SparkDeclaration("b", setOf("dep"), SparkType.FIRE_AND_FORGET, EmptyCoroutineContext, b)
                 )
             )
 

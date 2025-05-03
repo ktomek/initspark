@@ -6,6 +6,7 @@ import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -18,7 +19,7 @@ import kotlinx.coroutines.runBlocking
  *
  * The InitSpark class coordinates the execution of different types of sparks:
  * - Awaitable: executed synchronously and sequentially.
- * - Trackable: executed asynchronously and signals completion via [isTrackAbleInitialized].
+ * - Trackable: executed asynchronously and signals completion via [isTrackableInitialized].
  * - Run-and-forget: executed asynchronously without tracking completion.
  *
  * @property config List of declared spark initialization tasks.
@@ -41,14 +42,15 @@ class InitSpark(
     private val _isTrackAbleInitialized = MutableStateFlow(false)
 
     /**
-     * Emits true once all TRACKABLE sparks have completed.
+     * Emits true once all [com.github.ktomek.initspark.SparkType.TRACKABLE] sparks have completed.
      */
-    override val isTrackAbleInitialized: StateFlow<Boolean> = _isTrackAbleInitialized.asStateFlow()
+    override val isTrackableInitialized: StateFlow<Boolean> = _isTrackAbleInitialized.asStateFlow()
 
     private val _isInitialized = MutableStateFlow(false)
 
     /**
-     * Emits true once all DEFAULT (run-and-forget) sparks have completed.
+     * Emits true once all [com.github.ktomek.initspark.SparkType.TRACKABLE]
+     * and [com.github.ktomek.initspark.SparkType.FIRE_AND_FORGET] sparks have completed.
      */
     override val isInitialized: StateFlow<Boolean> = _isInitialized.asStateFlow()
 
@@ -62,8 +64,13 @@ class InitSpark(
         runBlocking {
             startAwaitable()
             with(createAndRunSparksJobs()) {
-                startAsyncSparks(this)
-                startRunAndForgetSparks(this)
+                scope.launch {
+                    coroutineScope {
+                        launch { startAsyncSparks(this@with) }
+                        launch { startRunAndForgetSparks(this@with) }
+                    }
+                    _isInitialized.update { true }
+                }
             }
         }
     }
@@ -96,27 +103,22 @@ class InitSpark(
             sparkTimer.measure(sparkDeclaration) { sparkDeclaration.spark() }
         }
 
-    private fun startAsyncSparks(jobs: Map<Key, Deferred<Unit>>) {
-        scope.launch {
-            config
-                .declarations
-                .filter { it.type == SparkType.TRACKABLE }
-                .map(SparkDeclaration::key)
-                .mapNotNull(jobs::get)
-                .awaitAll()
-            _isTrackAbleInitialized.update { true }
-        }
+    private suspend fun startAsyncSparks(jobs: Map<Key, Deferred<Unit>>) {
+        config
+            .declarations
+            .filter { it.type == SparkType.TRACKABLE }
+            .map(SparkDeclaration::key)
+            .mapNotNull(jobs::get)
+            .awaitAll()
+        _isTrackAbleInitialized.update { true }
     }
 
-    private fun startRunAndForgetSparks(jobs: Map<Key, Deferred<Unit>>) {
-        scope.launch {
-            config
-                .declarations
-                .filter { it.type == SparkType.DEFAULT }
-                .map(SparkDeclaration::key)
-                .mapNotNull(jobs::get)
-                .awaitAll()
-            _isInitialized.update { true }
-        }
+    private suspend fun startRunAndForgetSparks(jobs: Map<Key, Deferred<Unit>>) {
+        config
+            .declarations
+            .filter { it.type == SparkType.FIRE_AND_FORGET }
+            .map(SparkDeclaration::key)
+            .mapNotNull(jobs::get)
+            .awaitAll()
     }
 }

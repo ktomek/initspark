@@ -1,5 +1,8 @@
 package com.github.ktomek.initspark
 
+import com.github.ktomek.initspark.SparkType.AWAITABLE
+import com.github.ktomek.initspark.SparkType.FIRE_AND_FORGET
+import com.github.ktomek.initspark.SparkType.TRACKABLE
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
 
@@ -23,7 +26,7 @@ class SparkBuilder internal constructor(val sparks: Set<Spark>) {
     ) {
         addDeclaration(
             key,
-            SparkType.AWAITABLE,
+            AWAITABLE,
             emptySet(),
             context,
             spark
@@ -60,7 +63,7 @@ class SparkBuilder internal constructor(val sparks: Set<Spark>) {
         context: CoroutineContext = EmptyCoroutineContext,
         spark: Spark
     ) {
-        addDeclaration(key, SparkType.TRACKABLE, needs, context, spark)
+        addDeclaration(key, TRACKABLE, needs, context, spark)
     }
 
     inline fun <reified T : Spark> async(
@@ -85,7 +88,7 @@ class SparkBuilder internal constructor(val sparks: Set<Spark>) {
         context: CoroutineContext = EmptyCoroutineContext,
         spark: Spark
     ) {
-        addDeclaration(key, SparkType.DEFAULT, needs, context, spark)
+        addDeclaration(key, FIRE_AND_FORGET, needs, context, spark)
     }
 
     /**
