@@ -44,6 +44,15 @@ jobs:
       with:
         name: test-results
         path: lib/build/reports/tests/test/
+    - name: Generate Test Coverage Report
+      run: ./gradlew koverHtmlReport --no-daemon
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v5
+      with:
+        fail_ci_if_error: true
+        files: ./lib/build/reports/kover/report.xml
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }
 
   detekt:
     runs-on: ubuntu-latest
