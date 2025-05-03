@@ -1,3 +1,12 @@
+![Build](https://github.com/ktomek/initspark/actions/workflows/ci.yml/badge.svg)
+[![codecov](https://codecov.io/gh/ktomek/initspark/branch/main/graph/badge.svg)](https://codecov.io/gh/ktomek/initspark)
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+![GitHub release](https://img.shields.io/github/v/release/ktomek/initspark)
+![GitHub issues](https://img.shields.io/github/issues/ktomek/initspark)
+![GitHub pull requests](https://img.shields.io/github/issues-pr/ktomek/initspark)
+[![JitPack](https://jitpack.io/v/ktomek/initspark.svg)](https://jitpack.io/#ktomek/initspark)
+
+
 # InitSpark
 
 **InitSpark** is a lightweight, coroutine-based startup orchestration library for Kotlin applications. It provides a structured way to declare, sequence, and execute initialization tasks (called *sparks*) during your app's startup phase.
@@ -27,7 +36,7 @@ val config = buildSparks {
 Then run with:
 
 ```kotlin
-val initSpark = InitSpark.getInstance(config, CoroutineScope(Dispatchers.Default))
+val initSpark = InitSpark(config, CoroutineScope(Dispatchers.Default))
 initSpark.initialize()
 ```
 
