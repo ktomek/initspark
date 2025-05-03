@@ -18,7 +18,7 @@ class BuildSparksTest {
         val config = buildSparks(sparks = all) {
             await("logger", spark = logger)
             spark("warmup", spark = warmup)
-            async("upgrade", spark = upgrade)
+            async("upgrade", spark = upgrade, needs = setOf("warmup"))
         }
 
         val expected = SparkConfiguration(
@@ -39,7 +39,7 @@ class BuildSparksTest {
                 ),
                 SparkDeclaration(
                     key = "upgrade",
-                    needs = emptySet(),
+                    needs = setOf("warmup"),
                     type = SparkType.TRACKABLE,
                     coroutineContext = EmptyCoroutineContext,
                     spark = upgrade
@@ -80,7 +80,9 @@ class BuildSparksTest {
         val logger = Spark {}
         val warmup = Spark {}
 
-        assertFailsWith<IllegalArgumentException> {
+        assertFailsWith<IllegalArgumentException>(
+            "Initializer non-existent not found"
+        ) {
             buildSparks(sparks = setOf(logger, warmup)) {
                 await(key = "logger", spark = logger)
                 async(key = "warmup", needs = setOf("non-existent"), spark = warmup)
