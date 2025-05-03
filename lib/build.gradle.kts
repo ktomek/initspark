@@ -1,6 +1,7 @@
 import io.gitlab.arturbosch.detekt.Detekt
 import io.gitlab.arturbosch.detekt.DetektCreateBaselineTask
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.io.ByteArrayOutputStream
 
 plugins {
     alias(libs.plugins.jetbrains.kotlin.jvm)
@@ -10,7 +11,7 @@ plugins {
     id("maven-publish")
 }
 group = "com.github.ktomek"
-version = "1.0.0"
+version = getGitTagVersion()
 java {
     sourceCompatibility = JavaVersion.VERSION_17
     targetCompatibility = JavaVersion.VERSION_17
@@ -90,4 +91,18 @@ detekt {
     config.setFrom(file("../config/detekt-config.yml"))
     buildUponDefaultConfig = true
     autoCorrect = true
+}
+
+@Suppress("TooGenericExceptionCaught", "SwallowedException")
+fun getGitTagVersion(): String {
+    return try {
+        val stdout = ByteArrayOutputStream()
+        exec {
+            commandLine = listOf("git", "describe", "--tags", "--abbrev=0")
+            standardOutput = stdout
+        }
+        stdout.toString().trim().removePrefix("v")
+    } catch (_: Exception) {
+        "0.0.1-SNAPSHOT" // fallback if no tag found
+    }
 }
