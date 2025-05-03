@@ -4,38 +4,6 @@ import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
 
 /**
- * Encapsulates all spark declarations used for initialization.
- * The structure may change over time without impacting API consumers.
- */
-class SparkConfiguration internal constructor(
-    internal val declarations: List<SparkDeclaration>
-)
-
-/**
- * Constructs a SparkConfiguration using a DSL builder.
- *
- * Validates that all provided [sparks] are registered through the builder.
- * If any are missing, it throws an IllegalArgumentException.
- *
- * @param sparks A set of Spark instances to be registered and validated.
- * @param block Lambda receiver used to declare sparks.
- * @return A SparkConfiguration containing all declared SparkDeclarations.
- */
-fun buildSparks(
-    sparks: Set<Spark> = emptySet(),
-    block: SparkBuilder.() -> Unit
-): SparkConfiguration = SparkBuilder(sparks)
-    .apply {
-        block()
-        sparks.forEach { spark ->
-            require(declarations.any { it.spark == spark }) {
-                "Not all sparks has been registered ${spark.javaClass.name}"
-            }
-        }
-    }
-    .build()
-
-/**
  * DSL builder class for defining Spark declarations.
  */
 class SparkBuilder internal constructor(val sparks: Set<Spark>) {
@@ -46,7 +14,7 @@ class SparkBuilder internal constructor(val sparks: Set<Spark>) {
      *
      * @param key Unique identifier for the spark.
      * @param context Coroutine context in which to run the spark.
-     * @param spark Lambda returning a Spark instance.
+     * @param spark The Spark instance to be registered.
      */
     fun await(
         key: Key,
@@ -62,6 +30,15 @@ class SparkBuilder internal constructor(val sparks: Set<Spark>) {
         )
     }
 
+    /**
+     * Declares a sequential spark using a reified type lookup.
+     *
+     * This function fetches a spark instance of type [T] from the registered spark set
+     * and adds it as an awaitable (sequential) task.
+     *
+     * @param key Unique identifier for the spark.
+     * @param context Coroutine context in which to run the spark.
+     */
     inline fun <reified T : Spark> await(
         key: Key,
         context: CoroutineContext = EmptyCoroutineContext,
@@ -75,7 +52,7 @@ class SparkBuilder internal constructor(val sparks: Set<Spark>) {
      * @param key Unique identifier for the spark.
      * @param needs Dependencies to be resolved before this spark runs.
      * @param context Coroutine context in which to run the spark.
-     * @param spark Lambda returning a Spark instance.
+     * @param spark The Spark instance to be registered.
      */
     fun async(
         key: Key,
@@ -100,7 +77,7 @@ class SparkBuilder internal constructor(val sparks: Set<Spark>) {
      * @param key Unique identifier for the spark.
      * @param needs Dependencies to be resolved before this spark runs.
      * @param context Coroutine context in which to run the spark.
-     * @param spark Lambda returning a Spark instance.
+     * @param spark The Spark instance to be registered.
      */
     fun spark(
         key: Key,
@@ -111,6 +88,13 @@ class SparkBuilder internal constructor(val sparks: Set<Spark>) {
         addDeclaration(key, SparkType.DEFAULT, needs, context, spark)
     }
 
+    /**
+     * Declares a fire-and-forget spark using a reified type lookup.
+     *
+     * @param key Unique identifier for the spark.
+     * @param needs Dependencies to be resolved before this spark runs.
+     * @param context Coroutine context in which to run the spark.
+     */
     inline fun <reified T : Spark> spark(
         key: Key,
         needs: Set<Key> = emptySet(),
@@ -153,20 +137,3 @@ class SparkBuilder internal constructor(val sparks: Set<Spark>) {
      */
     internal fun build(): SparkConfiguration = SparkConfiguration(declarations)
 }
-
-/**
- * Retrieves the first instance of the specified Spark subtype from the set.
- *
- * @return the first Spark instance of type [T], or throws [NoSuchElementException] if not found.
- */
-inline fun <reified T> Set<Spark>.get(): T = filterIsInstance<T>().first()
-
-/**
- * Retrieves and removes the first element of the specified subtype from the set.
- *
- * @return the first Spark of type [T], or throws [IllegalArgumentException] if not found.
- */
-inline fun <reified T : Spark> MutableSet<Spark>.getAndRemove(): T = filterIsInstance<T>()
-    .firstOrNull()
-    ?.also(::remove)
-    ?: throw IllegalArgumentException("Missing element in list")

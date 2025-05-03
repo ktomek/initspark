@@ -7,6 +7,7 @@ plugins {
     id("maven-publish")
     id("io.gitlab.arturbosch.detekt")
     id("org.jetbrains.dokka") version "1.9.10"
+    jacoco
 }
 group = "com.github.ktomek"
 version = "1.0.0"
@@ -24,6 +25,15 @@ kotlin {
 
 tasks.test {
     useJUnitPlatform()
+    finalizedBy(tasks.jacocoTestReport) // auto-run after test
+}
+
+tasks.jacocoTestReport {
+    reports {
+        html.required = true
+        xml.required = true
+        csv.required = false
+    }
 }
 
 dependencies {
@@ -31,6 +41,7 @@ dependencies {
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.funktional)
 
+    testImplementation(kotlin("test"))
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.mockk)
     testImplementation(libs.kotlinx.coroutines.test)

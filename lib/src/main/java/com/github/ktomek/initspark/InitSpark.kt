@@ -60,8 +60,6 @@ class InitSpark internal constructor(
      */
     fun initialize() {
         runBlocking {
-            checkDuplicates()
-            checkMissingDependencies()
             startAwaitable()
             with(createAndRunSparksJobs()) {
                 startAsyncSparks(this)
@@ -69,11 +67,6 @@ class InitSpark internal constructor(
             }
         }
     }
-
-    private fun createSparksMap(): Map<Key, SparkDeclaration> = config
-        .declarations
-        .filter { it.type != AWAITABLE }
-        .associateBy { it.key }
 
     private fun createAndRunSparksJobs(): Map<Key, Deferred<Unit>> =
         mutableMapOf<Key, Deferred<Unit>>()
@@ -95,21 +88,6 @@ class InitSpark internal constructor(
             needs.mapNotNull(jobs::get).awaitAll()
             sparkTimer.measure(this@createJob) { spark() }
         }
-
-    private fun checkMissingDependencies() {
-        val sparksMap = createSparksMap()
-        config
-            .declarations
-            .flatMap { it.needs }
-            .forEach { need -> require(sparksMap.contains(need)) { "Initializer $need not found" } }
-    }
-
-    private fun checkDuplicates() = config
-        .declarations
-        .groupingBy { it.key }
-        .eachCount()
-        .filterValues { it > 1 }
-        .forEach { (key, _) -> error("$key is duplicated") }
 
     private suspend fun startAwaitable() = config
         .declarations
