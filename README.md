@@ -26,10 +26,48 @@
 ## Getting Started
 
 ```kotlin
-val config = buildSparks {
-    await { SparkLogger() }
-    async("LoadPrefs") { LoadPreferencesSpark() }
-    spark("WarmUp") { WarmUpCacheSpark() }
+val sparks = setOf(...)
+
+val config = buildSparks(sparks) {
+    await(key = "InitCrypto") { System.loadLibrary("crypto-lib") }
+    await<LoggerSpark>(key = "Logger")
+    await<ActivityLifecycleSpark>(key = "ActivityLifecycle")
+    await<AppLifecycleSpark>(key = "AppObserver")
+
+    val ioContext = Dispatchers.IO
+    val coreDeps = setOf("Database")
+
+    async<DatabaseSpark>(key = "Database", context = ioContext)
+    async<NotificationSpark>(
+        key = "Notification",
+        context = ioContext,
+        needs = coreDeps
+    )
+    async<AnalyticsSpark>(
+        key = "Analytics",
+        context = ioContext,
+        needs = coreDeps
+    )
+    async<BackgroundServiceSpark>(
+        key = "BackgroundService",
+        context = ioContext,
+        needs = coreDeps
+    )
+    async<MessagingSpark>(
+        key = "Messaging",
+        context = ioContext,
+        needs = coreDeps
+    )
+    async<AttributionSpark>(
+        key = "Attribution",
+        context = ioContext,
+        needs = coreDeps
+    )
+    spark<ConsentManagerSpark>(
+        key = "ConsentManager",
+        context = ioContext,
+        needs = coreDeps
+    )
 }
 ```
 
@@ -48,11 +86,22 @@ initSpark.initialize()
 
 ## Timing API
 
-Track execution times with:
+Track execution times with structured logging and insight into the InitSpark lifecycle:
 
 ```kotlin
-val duration = initSpark.timing.get(mySpark)
-val totalTime = initSpark.timing.total()
+spark.waitUntilInitialized()
+with(spark.timing) {
+    all().forEach { (declaration, duration) ->
+        Timber.d("Spark [${declaration.type}] '${declaration.key}' completed in $duration")
+    }
+
+   val windows = windowByType()
+   Timber.d("Awaitable phase duration: ${windows[SparkType.AWAITABLE]}")
+   Timber.d("Trackable phase duration: ${windows[SparkType.TRACKABLE]}")
+   Timber.d("Fire-and-forget phase duration: ${windows[SparkType.FIRE_AND_FORGET]}")
+   Timber.d("Total spark window duration: ${windowDuration()}")
+   Timber.d("Overall InitSpark total duration: ${total()}")
+}
 ```
 
 ## Contributing
