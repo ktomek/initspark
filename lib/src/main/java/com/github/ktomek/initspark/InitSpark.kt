@@ -17,18 +17,12 @@ import kotlinx.coroutines.runBlocking
 /**
  * Initializes and manages the lifecycle of a set of SparkDeclarations.
  *
- * The InitSpark class coordinates the execution of different types of sparks:
+ * The InitSpark interface coordinates the execution of different types of sparks:
  * - Awaitable: executed synchronously and sequentially.
  * - Trackable: executed asynchronously and signals completion via [isTrackableInitialized].
  * - Run-and-forget: executed asynchronously without tracking completion.
- *
- * @property config List of declared spark initialization tasks.
- * @property scope CoroutineScope used for launching asynchronous tasks.
  */
-class InitSpark(
-    private val config: SparkConfiguration,
-    private val scope: CoroutineScope
-) : SparkState {
+interface InitSpark : SparkState {
 
     /**
      * Exposes timing metrics collected during spark execution.
@@ -36,23 +30,7 @@ class InitSpark(
      * Provides duration tracking per spark and per spark type,
      * as well as total and windowed timing statistics.
      */
-    val timing: SparkTimingInfo = SparkTimer.getInstance()
-    private val sparkTimer: SparkTimer = SparkTimer.getInstance()
-
-    private val _isTrackAbleInitialized = MutableStateFlow(false)
-
-    /**
-     * Emits true once all [com.github.ktomek.initspark.SparkType.TRACKABLE] sparks have completed.
-     */
-    override val isTrackableInitialized: StateFlow<Boolean> = _isTrackAbleInitialized.asStateFlow()
-
-    private val _isInitialized = MutableStateFlow(false)
-
-    /**
-     * Emits true once all [com.github.ktomek.initspark.SparkType.TRACKABLE]
-     * and [com.github.ktomek.initspark.SparkType.FIRE_AND_FORGET] sparks have completed.
-     */
-    override val isInitialized: StateFlow<Boolean> = _isInitialized.asStateFlow()
+    val timing: SparkTimingInfo
 
     /**
      * Starts the initialization process of all defined sparks.
@@ -60,7 +38,32 @@ class InitSpark(
      * It ensures no duplicate keys exist, all dependencies are satisfied,
      * and then launches appropriate runners for each type of spark.
      */
-    fun initialize() {
+    fun initialize()
+}
+
+internal class InitSparkImpl(
+    private val config: SparkConfiguration,
+    private val scope: CoroutineScope
+) : InitSpark {
+
+    /**
+     * Exposes timing metrics collected during spark execution.
+     *
+     * Provides duration tracking per spark and per spark type,
+     * as well as total and windowed timing statistics.
+     */
+    override val timing: SparkTimingInfo = SparkTimer.getInstance()
+    private val sparkTimer: SparkTimer = SparkTimer.getInstance()
+
+    private val _isTrackAbleInitialized = MutableStateFlow(false)
+
+    override val isTrackableInitialized: StateFlow<Boolean> = _isTrackAbleInitialized.asStateFlow()
+
+    private val _isInitialized = MutableStateFlow(false)
+
+    override val isInitialized: StateFlow<Boolean> = _isInitialized.asStateFlow()
+
+    override fun initialize() {
         runBlocking {
             startAwaitable()
             with(createAndRunSparksJobs()) {
@@ -122,3 +125,8 @@ class InitSpark(
             .awaitAll()
     }
 }
+
+fun InitSpark(
+    config: SparkConfiguration,
+    scope: CoroutineScope
+): InitSpark = InitSparkImpl(config = config, scope = scope)
