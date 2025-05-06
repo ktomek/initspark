@@ -60,24 +60,24 @@ internal class SparkTimer(private val timeProvider: TimeProvider = DefaultTimePr
     /**
      * Returns the recorded duration for the given declaration, or null if not recorded.
      */
-    override fun get(declaration: SparkDeclaration): Duration? = timings[declaration]
+    override fun durationOf(declaration: SparkDeclaration): Duration? = timings[declaration]
 
     /**
      * Returns all measured timings.
      */
-    override fun all(): Map<SparkDeclaration, Duration> = timings.toMap()
+    override fun allDurations(): Map<SparkDeclaration, Duration> = timings.toMap()
 
     /**
      * Returns the total duration of all sparks.
      */
-    override fun total(): Duration = timings.values.fold(Duration.ZERO, Duration::plus)
+    override fun sumOfDurations(): Duration = timings.values.fold(Duration.ZERO, Duration::plus)
 
     /**
      * Groups timings by SparkType.
      *
      * @return Map of SparkType to aggregated Duration.
      */
-    override fun groupedByType(): Map<SparkType, Duration> =
+    override fun sumOfDurationsByType(): Map<SparkType, Duration> =
         timings.entries.groupBy { it.key.type }.mapValues { (_, entries) ->
             entries.fold(Duration.ZERO) { acc, entry -> acc + entry.value }
         }

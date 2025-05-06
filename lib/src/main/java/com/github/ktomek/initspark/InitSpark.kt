@@ -85,7 +85,7 @@ internal class InitSparkImpl(
                     .declarations
                     .filter { it.type != AWAITABLE }
                     .forEach { sparkDeclaration ->
-                        put(sparkDeclaration.key, sparkDeclaration.createJob(this))
+                        this[sparkDeclaration.key] = sparkDeclaration.createJob(this)
                     }
                 this.forEach { it.value.start() }
             }

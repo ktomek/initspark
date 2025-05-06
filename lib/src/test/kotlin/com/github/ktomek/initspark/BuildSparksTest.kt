@@ -16,30 +16,30 @@ class BuildSparksTest {
         val all = setOf(logger, warmup, upgrade)
 
         val config = buildSparks(sparks = all) {
-            await("logger", spark = logger)
-            spark("warmup", spark = warmup)
-            async("upgrade", spark = upgrade, needs = setOf("warmup"))
+            await("logger".asKey(), spark = logger)
+            spark("warmup".asKey(), spark = warmup)
+            async("upgrade".asKey(), spark = upgrade, needs = setOf("warmup".asKey()))
         }
 
         val expected = SparkConfiguration(
             listOf(
                 SparkDeclaration(
-                    key = "logger",
+                    key = "logger".asKey(),
                     needs = emptySet(),
                     type = SparkType.AWAITABLE,
                     coroutineContext = EmptyCoroutineContext,
                     spark = logger
                 ),
                 SparkDeclaration(
-                    key = "warmup",
+                    key = "warmup".asKey(),
                     needs = emptySet(),
                     type = SparkType.FIRE_AND_FORGET,
                     coroutineContext = EmptyCoroutineContext,
                     spark = warmup
                 ),
                 SparkDeclaration(
-                    key = "upgrade",
-                    needs = setOf("warmup"),
+                    key = "upgrade".asKey(),
+                    needs = setOf("warmup".asKey()),
                     type = SparkType.TRACKABLE,
                     coroutineContext = EmptyCoroutineContext,
                     spark = upgrade
@@ -57,7 +57,7 @@ class BuildSparksTest {
 
         assertFailsWith<IllegalArgumentException> {
             buildSparks(sparks = setOf(declared)) {
-                spark("oops", spark = other)
+                spark("oops".asKey(), spark = other)
             }
         }
     }
@@ -69,8 +69,8 @@ class BuildSparksTest {
 
         assertFailsWith<IllegalStateException> {
             buildSparks(sparks = setOf(logger, warmup)) {
-                await("dup", spark = mockk<Spark>())
-                async("dup", spark = mockk<Spark>())
+                await("dup".asKey(), spark = mockk<Spark>())
+                async("dup".asKey(), spark = mockk<Spark>())
             }
         }
     }
@@ -84,8 +84,8 @@ class BuildSparksTest {
             "Initializer non-existent not found"
         ) {
             buildSparks(sparks = setOf(logger, warmup)) {
-                await(key = "logger", spark = logger)
-                async(key = "warmup", needs = setOf("non-existent"), spark = warmup)
+                await(key = "logger".asKey(), spark = logger)
+                async(key = "warmup".asKey(), needs = setOf("non-existent".asKey()), spark = warmup)
             }
         }
     }

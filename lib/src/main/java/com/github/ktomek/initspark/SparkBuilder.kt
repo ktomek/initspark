@@ -46,7 +46,7 @@ class SparkBuilder internal constructor(val sparks: Set<Spark>) {
         key: Key,
         context: CoroutineContext = EmptyCoroutineContext,
     ) {
-        await(key = key, context = context, spark = sparks.get<T>())
+        await(key = key, context = context, spark = sparks.requireSpark<T>())
     }
 
     /**
@@ -71,7 +71,7 @@ class SparkBuilder internal constructor(val sparks: Set<Spark>) {
         needs: Set<Key> = emptySet(),
         context: CoroutineContext = EmptyCoroutineContext,
     ) {
-        async(key = key, needs = needs, context = context, spark = sparks.get<T>())
+        async(key = key, needs = needs, context = context, spark = sparks.requireSpark<T>())
     }
 
     /**
@@ -103,7 +103,7 @@ class SparkBuilder internal constructor(val sparks: Set<Spark>) {
         needs: Set<Key> = emptySet(),
         context: CoroutineContext = EmptyCoroutineContext,
     ) {
-        spark(key = key, needs = needs, context = context, spark = sparks.get<T>())
+        spark(key = key, needs = needs, context = context, spark = sparks.requireSpark<T>())
     }
 
     /**

@@ -4,7 +4,10 @@ import com.github.ktomek.initspark.SparkType.FIRE_AND_FORGET
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
 
-typealias Key = String
+@JvmInline
+value class Key(val value: String)
+
+fun String.asKey(): Key = Key(this)
 
 /**
  * Holds metadata about a declared Spark, including its key, dependencies,

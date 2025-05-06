@@ -31,21 +31,21 @@ class InitSparkTest {
             val config = SparkConfiguration(
                 listOf(
                     SparkDeclaration(
-                        "await",
+                        "await".asKey(),
                         emptySet(),
                         SparkType.AWAITABLE,
                         EmptyCoroutineContext,
                         awaitableSpark
                     ),
                     SparkDeclaration(
-                        "track",
+                        "track".asKey(),
                         emptySet(),
                         SparkType.TRACKABLE,
                         EmptyCoroutineContext,
                         trackableSpark
                     ),
                     SparkDeclaration(
-                        "default",
+                        "default".asKey(),
                         emptySet(),
                         SparkType.FIRE_AND_FORGET,
                         EmptyCoroutineContext,
@@ -78,21 +78,21 @@ class InitSparkTest {
             val config = SparkConfiguration(
                 listOf(
                     SparkDeclaration(
-                        "await",
+                        "await".asKey(),
                         emptySet(),
                         SparkType.AWAITABLE,
                         EmptyCoroutineContext,
                         awaitableSpark
                     ),
                     SparkDeclaration(
-                        "track",
+                        "track".asKey(),
                         emptySet(),
                         SparkType.TRACKABLE,
                         EmptyCoroutineContext,
                         trackableSpark
                     ),
                     SparkDeclaration(
-                        "default",
+                        "default".asKey(),
                         emptySet(),
                         SparkType.FIRE_AND_FORGET,
                         EmptyCoroutineContext,
@@ -127,14 +127,14 @@ class InitSparkTest {
         val config = SparkConfiguration(
             listOf(
                 SparkDeclaration(
-                    "s1",
+                    "s1".asKey(),
                     emptySet(),
                     SparkType.AWAITABLE,
                     EmptyCoroutineContext,
                     spark1
                 ),
                 SparkDeclaration(
-                    "s2",
+                    "s2".asKey(),
                     emptySet(),
                     SparkType.AWAITABLE,
                     EmptyCoroutineContext,
@@ -159,7 +159,7 @@ class InitSparkTest {
             val config = SparkConfiguration(
                 listOf(
                     SparkDeclaration(
-                        "t",
+                        "t".asKey(),
                         emptySet(),
                         SparkType.TRACKABLE,
                         EmptyCoroutineContext,
@@ -180,7 +180,7 @@ class InitSparkTest {
             val config = SparkConfiguration(
                 listOf(
                     SparkDeclaration(
-                        "d",
+                        "d".asKey(),
                         emptySet(),
                         SparkType.FIRE_AND_FORGET,
                         EmptyCoroutineContext,
@@ -204,14 +204,14 @@ class InitSparkTest {
         val config = SparkConfiguration(
             listOf(
                 SparkDeclaration(
-                    "shared",
-                    setOf("first"),
+                    "shared".asKey(),
+                    setOf("first".asKey()),
                     SparkType.TRACKABLE,
                     EmptyCoroutineContext,
                     shared
                 ),
                 SparkDeclaration(
-                    "first",
+                    "first".asKey(),
                     emptySet(),
                     SparkType.AWAITABLE,
                     EmptyCoroutineContext,
@@ -237,20 +237,26 @@ class InitSparkTest {
             val config = SparkConfiguration(
                 listOf(
                     SparkDeclaration(
-                        "dep",
+                        "dep".asKey(),
                         emptySet(),
                         SparkType.AWAITABLE,
                         EmptyCoroutineContext,
                         dep
                     ),
                     SparkDeclaration(
-                        "a",
-                        setOf("dep"),
+                        "a".asKey(),
+                        setOf("dep".asKey()),
                         SparkType.TRACKABLE,
                         EmptyCoroutineContext,
                         a
                     ),
-                    SparkDeclaration("b", setOf("dep"), SparkType.FIRE_AND_FORGET, EmptyCoroutineContext, b)
+                    SparkDeclaration(
+                        "b".asKey(),
+                        setOf("dep".asKey()),
+                        SparkType.FIRE_AND_FORGET,
+                        EmptyCoroutineContext,
+                        b
+                    )
                 )
             )
 
@@ -268,9 +274,27 @@ class InitSparkTest {
 
         val config = SparkConfiguration(
             listOf(
-                SparkDeclaration("a", emptySet(), SparkType.AWAITABLE, EmptyCoroutineContext, a),
-                SparkDeclaration("b", setOf("a"), SparkType.AWAITABLE, EmptyCoroutineContext, b),
-                SparkDeclaration("c", setOf("b"), SparkType.AWAITABLE, EmptyCoroutineContext, c)
+                SparkDeclaration(
+                    "a".asKey(),
+                    emptySet(),
+                    SparkType.AWAITABLE,
+                    EmptyCoroutineContext,
+                    a
+                ),
+                SparkDeclaration(
+                    "b".asKey(),
+                    setOf("a".asKey()),
+                    SparkType.AWAITABLE,
+                    EmptyCoroutineContext,
+                    b
+                ),
+                SparkDeclaration(
+                    "c".asKey(),
+                    setOf("b".asKey()),
+                    SparkType.AWAITABLE,
+                    EmptyCoroutineContext,
+                    c
+                )
             )
         )
 

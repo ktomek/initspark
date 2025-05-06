@@ -22,12 +22,12 @@ class SparkTimerTest {
         )
         val provider = FakeTimeProvider(marks)
         val timer = SparkTimer(provider)
-        val spark = testDeclaration("A", SparkType.AWAITABLE)
+        val spark = testDeclaration("A".asKey(), SparkType.AWAITABLE)
 
         timer.start(spark)
         timer.stop(spark)
 
-        assertEquals(60.milliseconds, timer.get(spark))
+        assertEquals(60.milliseconds, timer.durationOf(spark))
     }
 
     @Test
@@ -39,15 +39,15 @@ class SparkTimerTest {
             )
             val provider = FakeTimeProvider(marks)
             val timer = SparkTimer(provider)
-            val spark1 = testDeclaration("A", SparkType.TRACKABLE)
-            val spark2 = testDeclaration("B", SparkType.TRACKABLE)
+            val spark1 = testDeclaration("A".asKey(), SparkType.TRACKABLE)
+            val spark2 = testDeclaration("B".asKey(), SparkType.TRACKABLE)
 
             timer.start(spark1)
             timer.stop(spark1)
             timer.start(spark2)
             timer.stop(spark2)
 
-            assertEquals(40.milliseconds, timer.groupedByType()[SparkType.TRACKABLE])
+            assertEquals(40.milliseconds, timer.sumOfDurationsByType()[SparkType.TRACKABLE])
         }
 
     @Test
@@ -64,8 +64,8 @@ class SparkTimerTest {
         )
         val provider = FakeTimeProvider(marks)
         val timer = SparkTimer(provider)
-        val spark1 = testDeclaration("X", SparkType.AWAITABLE)
-        val spark2 = testDeclaration("Y", SparkType.AWAITABLE)
+        val spark1 = testDeclaration("X".asKey(), SparkType.AWAITABLE)
+        val spark2 = testDeclaration("Y".asKey(), SparkType.AWAITABLE)
 
         timer.start(spark1)
         timer.stop(spark1)
@@ -93,9 +93,9 @@ class SparkTimerTest {
             )
             val provider = FakeTimeProvider(marks)
             val timer = SparkTimer(provider)
-            val spark1 = testDeclaration("X", SparkType.TRACKABLE)
-            val spark2 = testDeclaration("Y", SparkType.FIRE_AND_FORGET)
-            val spark3 = testDeclaration("Y", SparkType.TRACKABLE)
+            val spark1 = testDeclaration("X".asKey(), SparkType.TRACKABLE)
+            val spark2 = testDeclaration("Y".asKey(), SparkType.FIRE_AND_FORGET)
+            val spark3 = testDeclaration("Y".asKey(), SparkType.TRACKABLE)
 
             timer.start(spark1)
             timer.start(spark3)
@@ -119,10 +119,10 @@ class SparkTimerTest {
         )
         val provider = FakeTimeProvider(marks)
         val timer = SparkTimer(provider)
-        val spark1 = testDeclaration("A", SparkType.FIRE_AND_FORGET)
-        val spark2 = testDeclaration("B", SparkType.TRACKABLE)
-        val spark3 = testDeclaration("C", SparkType.TRACKABLE)
-        val spark4 = testDeclaration("D", SparkType.FIRE_AND_FORGET)
+        val spark1 = testDeclaration("A".asKey(), SparkType.FIRE_AND_FORGET)
+        val spark2 = testDeclaration("B".asKey(), SparkType.TRACKABLE)
+        val spark3 = testDeclaration("C".asKey(), SparkType.TRACKABLE)
+        val spark4 = testDeclaration("D".asKey(), SparkType.FIRE_AND_FORGET)
 
         timer.start(spark1)
         timer.stop(spark1)
@@ -133,7 +133,7 @@ class SparkTimerTest {
         timer.start(spark4)
         timer.stop(spark4)
 
-        assertEquals(58.milliseconds, timer.total())
+        assertEquals(58.milliseconds, timer.sumOfDurations())
     }
 
     @Test
@@ -144,15 +144,15 @@ class SparkTimerTest {
         )
         val provider = FakeTimeProvider(marks)
         val timer = SparkTimer(provider)
-        val spark1 = testDeclaration("X", SparkType.AWAITABLE)
-        val spark2 = testDeclaration("Y", SparkType.TRACKABLE)
+        val spark1 = testDeclaration("X".asKey(), SparkType.AWAITABLE)
+        val spark2 = testDeclaration("Y".asKey(), SparkType.TRACKABLE)
 
         timer.start(spark1)
         timer.stop(spark1)
         timer.start(spark2)
         timer.stop(spark2)
 
-        val results = timer.all()
+        val results = timer.allDurations()
         assertEquals(10.milliseconds, results[spark1])
         assertEquals(20.milliseconds, results[spark2])
     }
@@ -161,7 +161,7 @@ class SparkTimerTest {
     fun `GIVEN spark not started WHEN stop called THEN throws`() = runTest {
         val provider = FakeTimeProvider(listOf(FakeTimeMark(10)))
         val timer = SparkTimer(provider)
-        val spark = testDeclaration("Z", SparkType.AWAITABLE)
+        val spark = testDeclaration("Z".asKey(), SparkType.AWAITABLE)
 
         assertFailsWith<IllegalStateException> {
             timer.stop(spark)
@@ -176,12 +176,12 @@ class SparkTimerTest {
         )
         val provider = FakeTimeProvider(marks)
         val timer = SparkTimer(provider)
-        val spark = testDeclaration("M", SparkType.TRACKABLE)
+        val spark = testDeclaration("M".asKey(), SparkType.TRACKABLE)
         timer.measure(spark) {
             // Simulated work
         }
 
-        assertEquals(100.milliseconds, timer.get(spark))
+        assertEquals(100.milliseconds, timer.durationOf(spark))
     }
 
     private fun testDeclaration(

@@ -12,7 +12,7 @@ class SparkBuilderTest {
     fun `GIVEN SparkBuilder WHEN await called THEN adds AWAITABLE declaration`() = runTest {
         val spark = mockk<Spark>()
         val builder = SparkBuilder(setOf(spark))
-        val key = "await-key"
+        val key = "await-key".asKey()
 
         builder.await(key, spark = spark)
 
@@ -33,7 +33,7 @@ class SparkBuilderTest {
     fun `GIVEN SparkBuilder WHEN async called THEN adds TRACKABLE declaration`() = runTest {
         val spark = mockk<Spark>()
         val builder = SparkBuilder(setOf(spark))
-        val key = "async-key"
+        val key = "async-key".asKey()
 
         builder.async(key, spark = spark)
 
@@ -54,7 +54,7 @@ class SparkBuilderTest {
     fun `GIVEN SparkBuilder WHEN spark called THEN adds DEFAULT declaration`() = runTest {
         val spark = mockk<Spark>()
         val builder = SparkBuilder(setOf(spark))
-        val key = "spark-key"
+        val key = "spark-key".asKey()
 
         builder.spark(key, spark = spark)
 
@@ -75,7 +75,7 @@ class SparkBuilderTest {
     fun `GIVEN SparkBuilder WITH reified await WHEN spark is in set THEN it resolves correctly`() = runTest {
         val spark = mockk<TestSpark>()
         val builder = SparkBuilder(setOf(spark))
-        val key = "await-key"
+        val key = "await-key".asKey()
 
         builder.await<TestSpark>(key)
 
@@ -96,7 +96,7 @@ class SparkBuilderTest {
     fun `GIVEN SparkBuilder WITH reified async WHEN spark is in set THEN it resolves correctly`() = runTest {
         val spark = mockk<TestSpark>()
         val builder = SparkBuilder(setOf(spark))
-        val key = "async-key"
+        val key = "async-key".asKey()
 
         builder.async<TestSpark>(key)
 
@@ -117,7 +117,7 @@ class SparkBuilderTest {
     fun `GIVEN SparkBuilder WITH reified spark WHEN spark is in set THEN it resolves correctly`() = runTest {
         val spark = mockk<TestSpark>()
         val builder = SparkBuilder(setOf(spark))
-        val key = "spark-key"
+        val key = "spark-key".asKey()
 
         builder.spark<TestSpark>(key)
 
