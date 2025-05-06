@@ -5,12 +5,18 @@ import com.github.ktomek.initspark.SparkType.AWAITABLE
 /**
  * Constructs a SparkConfiguration using a DSL builder.
  *
- * Validates that all provided [sparks] are registered through the builder.
- * If any are missing, it throws an IllegalArgumentException.
+ * This function:
+ * - Validates that no duplicate spark keys are declared.
+ * - Validates that all `needs` dependencies point to existing sparks.
+ * - Validates that all provided [sparks] are registered via the builder.
+ *
+ * If any of these conditions are not met, an exception will be thrown.
  *
  * @param sparks A set of Spark instances to be registered and validated.
  * @param block Lambda receiver used to declare sparks.
  * @return A SparkConfiguration containing all declared SparkDeclarations.
+ * @throws IllegalStateException if duplicate keys are declared.
+ * @throws IllegalArgumentException if a declared dependency is missing.
  */
 fun buildSparks(
     sparks: Set<Spark>,
