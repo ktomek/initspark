@@ -29,42 +29,43 @@
 val sparks = setOf(...)
 
 val config = buildSparks(sparks) {
-    await(key = "InitCrypto") { System.loadLibrary("crypto-lib") }
-    await<LoggerSpark>(key = "Logger")
-    await<ActivityLifecycleSpark>(key = "ActivityLifecycle")
-    await<AppLifecycleSpark>(key = "AppObserver")
+    await(key = Key("InitCrypto")) { System.loadLibrary("crypto-lib") }
+
+    await<LoggerSpark>(key = Key("Logger"))
+    await<ActivityLifecycleSpark>(key = Key("ActivityLifecycle"))
+    await<AppObserverSpark>(key = Key("AppObserver"))
 
     val ioContext = Dispatchers.IO
-    val coreDeps = setOf("Database")
+    val coreDeps = setOf(Key("Database"))
 
-    async<DatabaseSpark>(key = "Database", context = ioContext)
+    async<DatabaseSpark>(key = Key("Database"), context = ioContext)
     async<NotificationSpark>(
-        key = "Notification",
+        key = Key("Notification"),
         context = ioContext,
         needs = coreDeps
     )
     async<AnalyticsSpark>(
-        key = "Analytics",
+        key = Key("Analytics"),
         context = ioContext,
         needs = coreDeps
     )
     async<BackgroundServiceSpark>(
-        key = "BackgroundService",
+        key = Key("BackgroundService"),
         context = ioContext,
         needs = coreDeps
     )
     async<MessagingSpark>(
-        key = "Messaging",
+        key = Key("Messaging"),
         context = ioContext,
         needs = coreDeps
     )
     async<AttributionSpark>(
-        key = "Attribution",
+        key = Key("Attribution"),
         context = ioContext,
         needs = coreDeps
     )
     spark<ConsentManagerSpark>(
-        key = "ConsentManager",
+        key = Key("ConsentManager"),
         context = ioContext,
         needs = coreDeps
     )
@@ -74,7 +75,7 @@ val config = buildSparks(sparks) {
 Then run with:
 
 ```kotlin
-val initSpark = InitSpark(config, CoroutineScope(Dispatchers.Default))
+val initSpark = InitSpark.create(config, CoroutineScope(Dispatchers.Default))
 initSpark.initialize()
 ```
 
@@ -91,16 +92,16 @@ Track execution times with structured logging and insight into the InitSpark lif
 ```kotlin
 spark.waitUntilInitialized()
 with(spark.timing) {
-    all().forEach { (declaration, duration) ->
+    allDurations().forEach { (declaration, duration) ->
         Timber.d("Spark [${declaration.type}] '${declaration.key}' completed in $duration")
     }
 
-   val windows = windowByType()
-   Timber.d("Awaitable phase duration: ${windows[SparkType.AWAITABLE]}")
-   Timber.d("Trackable phase duration: ${windows[SparkType.TRACKABLE]}")
-   Timber.d("Fire-and-forget phase duration: ${windows[SparkType.FIRE_AND_FORGET]}")
-   Timber.d("Total spark window duration: ${windowDuration()}")
-   Timber.d("Overall InitSpark total duration: ${total()}")
+    val windows = windowByType()
+    Timber.d("Awaitable phase duration: ${windows[SparkType.AWAITABLE]}")
+    Timber.d("Trackable phase duration: ${windows[SparkType.TRACKABLE]}")
+    Timber.d("Fire-and-forget phase duration: ${windows[SparkType.FIRE_AND_FORGET]}")
+    Timber.d("Total spark window duration: ${windowDuration()}")
+    Timber.d("Overall InitSpark total duration: ${sumOfDurations()}")
 }
 ```
 
