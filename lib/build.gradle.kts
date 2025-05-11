@@ -1,13 +1,14 @@
 import io.gitlab.arturbosch.detekt.Detekt
 import io.gitlab.arturbosch.detekt.DetektCreateBaselineTask
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import java.io.ByteArrayOutputStream
+import org.ajoberstar.grgit.Grgit
 
 plugins {
     alias(libs.plugins.jetbrains.kotlin.jvm)
     alias(libs.plugins.dokka)
     alias(libs.plugins.detekt)
     alias(libs.plugins.kover)
+    alias(libs.plugins.grgit)
     id("maven-publish")
 }
 group = "com.github.ktomek"
@@ -93,16 +94,15 @@ detekt {
     autoCorrect = true
 }
 
-@Suppress("TooGenericExceptionCaught", "SwallowedException")
-fun getGitTagVersion(): String {
-    return try {
-        val stdout = ByteArrayOutputStream()
-        exec {
-            commandLine = listOf("git", "describe", "--tags", "--abbrev=0")
-            standardOutput = stdout
-        }
-        stdout.toString().trim().removePrefix("v")
-    } catch (_: Exception) {
-        "0.0.1-SNAPSHOT" // fallback if no tag found
-    }
+fun getGitTagVersion(): String = runCatching {
+    Grgit
+        .open(mapOf("dir" to project.rootDir))
+        .tag
+        .list()
+        .maxByOrNull { it.commit.dateTime }
+        ?.name
+        ?.removePrefix("v")
+        ?: "0.0.1-SNAPSHOT"
 }
+    .onFailure { e -> logger.error("Failed to read git tag", e) }
+    .getOrElse { "0.0.1-SNAPSHOT" }
