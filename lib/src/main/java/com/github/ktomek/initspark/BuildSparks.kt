@@ -26,6 +26,7 @@ fun buildSparks(
         block()
         declarations.checkDuplicates()
         declarations.checkMissingDependencies()
+        declarations.checkCycles()
         sparks.forEach { spark ->
             require(declarations.any { it.spark == spark }) {
                 "Not all sparks has been registered ${spark.javaClass.name}"
@@ -48,4 +49,36 @@ private fun List<SparkDeclaration>.checkMissingDependencies() {
     val sparksMap = createSparksMap()
     flatMap { it.needs }
         .forEach { need -> require(sparksMap.contains(need)) { "Initializer $need not found" } }
+}
+
+private fun List<SparkDeclaration>.checkCycles() {
+    val graph = this
+        .associateBy { it.key }
+        .mapValues { it.value.needs }
+
+    val visited = mutableSetOf<Key>()
+    val reStack = mutableSetOf<Key>()
+    val path = mutableListOf<Key>()
+
+    fun dfs(key: Key) {
+        if (key in reStack) {
+            val cycleStartIndex = path.indexOf(key)
+            val cyclePath = path.subList(cycleStartIndex, path.size) + key
+            error("Cycle detected: ${cyclePath.joinToString(" -> ") { it.value }}")
+        }
+        if (key in visited) return
+
+        visited.add(key)
+        reStack.add(key)
+        path.add(key)
+
+        for (neighbor in graph[key].orEmpty()) {
+            dfs(neighbor)
+        }
+
+        reStack.remove(key)
+        path.removeAt(path.size - 1)
+    }
+
+    graph.keys.forEach { key -> dfs(key) }
 }

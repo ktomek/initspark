@@ -89,4 +89,20 @@ class BuildSparksTest {
             }
         }
     }
+
+    @Test
+    fun `GIVEN cyclic spark dependencies WHEN buildSparks called THEN throws`() {
+        val a = Spark {}
+        val b = Spark {}
+        val c = Spark {}
+
+        val exception = assertFailsWith<IllegalStateException> {
+            buildSparks(sparks = setOf(a, b, c)) {
+                async("A".asKey(), spark = a, needs = setOf("C".asKey()))
+                async("B".asKey(), spark = b, needs = setOf("A".asKey()))
+                async("C".asKey(), spark = c, needs = setOf("B".asKey()))
+            }
+        }
+        assertEquals("Cycle detected: A -> C -> B -> A", exception.message)
+    }
 }
