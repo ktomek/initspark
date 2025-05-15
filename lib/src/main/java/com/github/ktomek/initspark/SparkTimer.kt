@@ -16,8 +16,8 @@ internal class SparkTimer(private val timeProvider: TimeProvider = DefaultTimePr
     private val timings = mutableMapOf<SparkDeclaration, Duration>()
     private val startTimes = mutableMapOf<SparkDeclaration, TimeMark>()
     private lateinit var firstStartTime: TimeMark
-    private var totalWindowDuration: Duration? = null
-    private val typeWindowMarks = mutableMapOf<SparkType, Pair<TimeMark, Duration?>>()
+    private var totalExecutionDeltaDuration: Duration? = null
+    private val typeExecutionDeltaMarks = mutableMapOf<SparkType, Pair<TimeMark, Duration?>>()
     private val mutex = Mutex()
 
     /**
@@ -33,8 +33,8 @@ internal class SparkTimer(private val timeProvider: TimeProvider = DefaultTimePr
                 firstStartTime = now
             }
             val type = declaration.type
-            val (startMark, duration) = typeWindowMarks[type].orDefault { null to null }
-            startMark.onNull { typeWindowMarks[type] = now to duration }
+            val (startMark, duration) = typeExecutionDeltaMarks[type].orDefault { null to null }
+            startMark.onNull { typeExecutionDeltaMarks[type] = now to duration }
         }
     }
 
@@ -49,11 +49,11 @@ internal class SparkTimer(private val timeProvider: TimeProvider = DefaultTimePr
             val mark = startTimes.remove(declaration)
                 ?: error("Timer was not started for declaration: $declaration")
             timings[declaration] = mark.elapsedNow()
-            totalWindowDuration = firstStartTime.elapsedNow()
+            totalExecutionDeltaDuration = firstStartTime.elapsedNow()
 
             val type = declaration.type
-            val (startMark, _) = typeWindowMarks[type]!!
-            typeWindowMarks[type] = startMark to startMark.elapsedNow()
+            val (startMark, _) = typeExecutionDeltaMarks[type]!!
+            typeExecutionDeltaMarks[type] = startMark to startMark.elapsedNow()
         }
     }
 
@@ -85,9 +85,9 @@ internal class SparkTimer(private val timeProvider: TimeProvider = DefaultTimePr
     /**
      * Returns the duration between the first start and last stop.
      */
-    override fun windowDuration(): Duration? = totalWindowDuration
+    override fun executionDelta(): Duration? = totalExecutionDeltaDuration
 
-    override fun windowByType(): Map<SparkType, Duration> = typeWindowMarks
+    override fun executionDeltaByType(): Map<SparkType, Duration> = typeExecutionDeltaMarks
         .mapNotNull { (type, startAndDuration) ->
             val (_, duration) = startAndDuration
             lift(type, duration) { t, d -> t to d }

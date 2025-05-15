@@ -38,14 +38,14 @@ interface SparkTimingInfo {
     /**
      * Returns the duration between the first spark start and the last spark stop.
      *
-     * @return the window duration if available, or null.
+     * @return the execution delta duration if available, or null.
      */
-    fun windowDuration(): Duration?
+    fun executionDelta(): Duration?
 
     /**
-     * Returns the duration windows grouped by SparkType.
+     * Returns the execution duration grouped by SparkType.
      *
-     * @return a map from spark type to window duration.
+     * @return a map from spark type to execution delta duration.
      */
-    fun windowByType(): Map<SparkType, Duration>
+    fun executionDeltaByType(): Map<SparkType, Duration>
 }

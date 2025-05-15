@@ -51,7 +51,7 @@ class SparkTimerTest {
         }
 
     @Test
-    fun `GIVEN first and last spark WHEN stopped THEN windowDuration is valid`() = runTest {
+    fun `GIVEN first and last spark WHEN stopped THEN executionDelta is valid`() = runTest {
         val firstTimeMark = mockk<TimeMark> {
             every { elapsedNow() } returnsMany listOf(
                 10.milliseconds,
@@ -72,13 +72,13 @@ class SparkTimerTest {
         timer.start(spark2)
         timer.stop(spark2)
 
-        val window = timer.windowDuration()
+        val delta = timer.executionDelta()
         // windowDuration = last stop - first start = 45 - 10 = 35
-        assertEquals(35.milliseconds, window)
+        assertEquals(35.milliseconds, delta)
     }
 
     @Test
-    fun `GIVEN different spark types WHEN measured THEN windowByType returns correct ranges`() =
+    fun `GIVEN different spark types WHEN measured THEN executionDeltaByType returns correct ranges`() =
         runTest {
             val firstTimeMark = mockk<TimeMark> {
                 every { elapsedNow() } returnsMany listOf(
@@ -104,9 +104,9 @@ class SparkTimerTest {
             timer.stop(spark2)
             timer.stop(spark3)
 
-            val windows = timer.windowByType()
-            assertEquals(35.milliseconds, windows[SparkType.TRACKABLE])
-            assertEquals(20.milliseconds, windows[SparkType.FIRE_AND_FORGET])
+            val delta = timer.executionDeltaByType()
+            assertEquals(35.milliseconds, delta[SparkType.TRACKABLE])
+            assertEquals(20.milliseconds, delta[SparkType.FIRE_AND_FORGET])
         }
 
     @Test
