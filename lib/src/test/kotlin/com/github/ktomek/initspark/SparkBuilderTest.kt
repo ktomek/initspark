@@ -134,5 +134,29 @@ class SparkBuilderTest {
         )
     }
 
+    @Test
+    fun `GIVEN SparkBuilder WITH reified spark without key WHEN spark is in set THEN it resolves correctly`() = runTest {
+        val spark = TestSparkImpl()
+        val builder = SparkBuilder(setOf(spark))
+
+        builder.spark<TestSpark>()
+
+        val declaration = builder.build().declarations.single()
+        assertEquals(
+            SparkDeclaration(
+                key = "TestSparkImpl".asKey(),
+                needs = emptySet(),
+                type = SparkType.FIRE_AND_FORGET,
+                coroutineContext = EmptyCoroutineContext,
+                spark = spark
+            ),
+            declaration
+        )
+    }
+
     private interface TestSpark : Spark
+
+    private class TestSparkImpl : TestSpark {
+        override suspend fun invoke() = Unit
+    }
 }

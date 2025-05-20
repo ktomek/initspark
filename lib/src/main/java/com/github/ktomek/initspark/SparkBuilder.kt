@@ -20,7 +20,7 @@ class SparkBuilder internal constructor(val sparks: Set<Spark>) {
      * @param spark The Spark instance to be registered.
      */
     fun await(
-        key: Key,
+        key: Key? = null,
         context: CoroutineContext = EmptyCoroutineContext,
         spark: Spark
     ) {
@@ -43,7 +43,7 @@ class SparkBuilder internal constructor(val sparks: Set<Spark>) {
      * @param context Coroutine context in which to run the spark.
      */
     inline fun <reified T : Spark> await(
-        key: Key,
+        key: Key? = null,
         context: CoroutineContext = EmptyCoroutineContext,
     ) {
         await(key = key, context = context, spark = sparks.requireSpark<T>())
@@ -58,7 +58,7 @@ class SparkBuilder internal constructor(val sparks: Set<Spark>) {
      * @param spark The Spark instance to be registered.
      */
     fun async(
-        key: Key,
+        key: Key? = null,
         needs: Set<Key> = emptySet(),
         context: CoroutineContext = EmptyCoroutineContext,
         spark: Spark
@@ -67,7 +67,7 @@ class SparkBuilder internal constructor(val sparks: Set<Spark>) {
     }
 
     inline fun <reified T : Spark> async(
-        key: Key,
+        key: Key? = null,
         needs: Set<Key> = emptySet(),
         context: CoroutineContext = EmptyCoroutineContext,
     ) {
@@ -83,7 +83,7 @@ class SparkBuilder internal constructor(val sparks: Set<Spark>) {
      * @param spark The Spark instance to be registered.
      */
     fun spark(
-        key: Key,
+        key: Key? = null,
         needs: Set<Key> = emptySet(),
         context: CoroutineContext = EmptyCoroutineContext,
         spark: Spark
@@ -99,7 +99,7 @@ class SparkBuilder internal constructor(val sparks: Set<Spark>) {
      * @param context Coroutine context in which to run the spark.
      */
     inline fun <reified T : Spark> spark(
-        key: Key,
+        key: Key? = null,
         needs: Set<Key> = emptySet(),
         context: CoroutineContext = EmptyCoroutineContext,
     ) {
@@ -116,7 +116,7 @@ class SparkBuilder internal constructor(val sparks: Set<Spark>) {
      * @param spark Lambda providing the Spark instance.
      */
     private fun addDeclaration(
-        key: Key,
+        key: Key? = null,
         type: SparkType,
         needs: Set<Key>,
         context: CoroutineContext,
@@ -124,7 +124,7 @@ class SparkBuilder internal constructor(val sparks: Set<Spark>) {
     ) {
         declarations.add(
             SparkDeclaration(
-                key = key,
+                key = key ?: spark.javaClass.simpleName.asKey(),
                 needs = needs,
                 type = type,
                 coroutineContext = context,

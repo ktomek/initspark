@@ -29,43 +29,37 @@
 val sparks = setOf(...)
 
 val config = buildSparks(sparks) {
-    await(key = Key("InitCrypto")) { System.loadLibrary("crypto-lib") }
+    await { System.loadLibrary("crypto-lib") }
 
-    await<LoggerSpark>(key = Key("Logger"))
-    await<ActivityLifecycleSpark>(key = Key("ActivityLifecycle"))
-    await<AppObserverSpark>(key = Key("AppObserver"))
+    await<LoggerSpark>()
+    await<ActivityLifecycleSpark>()
+    await<AppObserverSpark>()
 
     val ioContext = Dispatchers.IO
     val coreDeps = setOf(Key("Database"))
 
-    async<DatabaseSpark>(key = Key("Database"), context = ioContext)
+    async<DatabaseSpark>(key = "Database".asKey(), context = ioContext)
     async<NotificationSpark>(
-        key = Key("Notification"),
         context = ioContext,
         needs = coreDeps
     )
     async<AnalyticsSpark>(
-        key = Key("Analytics"),
         context = ioContext,
         needs = coreDeps
     )
     async<BackgroundServiceSpark>(
-        key = Key("BackgroundService"),
         context = ioContext,
         needs = coreDeps
     )
     async<MessagingSpark>(
-        key = Key("Messaging"),
         context = ioContext,
         needs = coreDeps
     )
     async<AttributionSpark>(
-        key = Key("Attribution"),
         context = ioContext,
         needs = coreDeps
     )
     spark<ConsentManagerSpark>(
-        key = Key("ConsentManager"),
         context = ioContext,
         needs = coreDeps
     )
