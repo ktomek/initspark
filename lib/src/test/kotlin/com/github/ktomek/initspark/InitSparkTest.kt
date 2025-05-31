@@ -28,31 +28,23 @@ class InitSparkTest {
             val trackableSpark = mockk<Spark>(relaxed = true)
             val defaultSpark = mockk<Spark>(relaxed = true)
 
-            val config = SparkConfiguration(
-                listOf(
-                    SparkDeclaration(
-                        "await".asKey(),
-                        emptySet(),
-                        SparkType.AWAITABLE,
-                        EmptyCoroutineContext,
-                        awaitableSpark
-                    ),
-                    SparkDeclaration(
-                        "track".asKey(),
-                        emptySet(),
-                        SparkType.TRACKABLE,
-                        EmptyCoroutineContext,
-                        trackableSpark
-                    ),
-                    SparkDeclaration(
-                        "default".asKey(),
-                        emptySet(),
-                        SparkType.FIRE_AND_FORGET,
-                        EmptyCoroutineContext,
-                        defaultSpark
-                    )
+            val config = buildSparks(emptySet()) {
+                await(
+                    "await".asKey(),
+                    EmptyCoroutineContext,
+                    awaitableSpark
                 )
-            )
+                async(
+                    "track".asKey(),
+                    context = EmptyCoroutineContext,
+                    spark = trackableSpark
+                )
+                spark(
+                    "default".asKey(),
+                    context = EmptyCoroutineContext,
+                    spark = defaultSpark
+                )
+            }
 
             val initSpark = InitSpark(config, this)
 
@@ -156,17 +148,9 @@ class InitSparkTest {
     fun `GIVEN trackable spark WHEN initialized THEN isTrackAbleInitialized becomes true after run`() =
         runTest {
             val spark = mockk<Spark>(relaxed = true)
-            val config = SparkConfiguration(
-                listOf(
-                    SparkDeclaration(
-                        "t".asKey(),
-                        emptySet(),
-                        SparkType.TRACKABLE,
-                        EmptyCoroutineContext,
-                        spark
-                    )
-                )
-            )
+            val config = buildSparks(emptySet()) {
+                spark("t".asKey(), emptySet(), EmptyCoroutineContext, spark)
+            }
             val initSpark = InitSpark(config, CoroutineScope(Dispatchers.Default))
 
             initSpark.initialize()
