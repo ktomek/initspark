@@ -5,9 +5,9 @@ import com.github.ktomek.funktional.onNull
 import com.github.ktomek.funktional.orDefault
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.time.Duration
 import kotlin.time.TimeMark
-import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Utility class for measuring execution time of sparks.
