@@ -7,17 +7,18 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlin.time.Duration
 import kotlin.time.TimeMark
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Utility class for measuring execution time of sparks.
  */
 internal class SparkTimer(private val timeProvider: TimeProvider = DefaultTimeProvider) :
     SparkTimingInfo {
-    private val timings = mutableMapOf<SparkDeclaration, Duration>()
-    private val startTimes = mutableMapOf<SparkDeclaration, TimeMark>()
+    private val timings = ConcurrentHashMap<SparkDeclaration, Duration>()
+    private val startTimes = ConcurrentHashMap<SparkDeclaration, TimeMark>()
     private lateinit var firstStartTime: TimeMark
     private var totalExecutionDeltaDuration: Duration? = null
-    private val typeExecutionDeltaMarks = mutableMapOf<SparkType, Pair<TimeMark, Duration?>>()
+    private val typeExecutionDeltaMarks = ConcurrentHashMap<SparkType, Pair<TimeMark, Duration?>>()
     private val mutex = Mutex()
 
     /**
