@@ -1,11 +1,10 @@
 package com.github.ktomek.initspark
 
+import app.cash.turbine.test
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.coVerifyOrder
 import io.mockk.mockk
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
@@ -135,7 +134,7 @@ class InitSparkTest {
             )
         )
 
-        val initSpark = InitSpark(config, CoroutineScope(Dispatchers.Default))
+        val initSpark = InitSpark(config, this)
         initSpark.initialize()
 
         coVerifyOrder {
@@ -151,10 +150,13 @@ class InitSparkTest {
             val config = buildSparks(emptySet()) {
                 spark("t".asKey(), emptySet(), EmptyCoroutineContext, spark)
             }
-            val initSpark = InitSpark(config, CoroutineScope(Dispatchers.Default))
+            val initSpark = InitSpark(config, this)
 
-            initSpark.initialize()
-            assertTrue(initSpark.isTrackableInitialized.first())
+            initSpark.isTrackableInitialized.test {
+                assertFalse(awaitItem())
+                initSpark.initialize()
+                assertTrue(awaitItem())
+            }
         }
 
     @Test
