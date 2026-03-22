@@ -6,7 +6,7 @@ import kotlin.coroutines.EmptyCoroutineContext
 
 /**
  * Represents a unique identifier for a Spark within a SparkConfiguration.
- * 
+ *
  * Implementations of this interface can be anything that provides proper equality semantics,
  * such as a `data object`, `enum class`, or a specific class. The [StringKey] is provided
  * as a default implementation for strings.
@@ -23,7 +23,7 @@ interface Key {
 
 /**
  * A simple string-backed implementation of [Key].
- * 
+ *
  * @property value The underlying string representation of this key.
  */
 @JvmInline
