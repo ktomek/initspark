@@ -64,7 +64,7 @@ private fun List<SparkDeclaration>.checkCycles() {
         if (key in reStack) {
             val cycleStartIndex = path.indexOf(key)
             val cyclePath = path.subList(cycleStartIndex, path.size) + key
-            error("Cycle detected: ${cyclePath.joinToString(" -> ") { it.value }}")
+            error("Cycle detected: ${cyclePath.joinToString(" -> ") { if (it is StringKey) it.value else it.toString() }}")
         }
         if (key in visited) return
 

@@ -4,8 +4,30 @@ import com.github.ktomek.initspark.SparkType.FIRE_AND_FORGET
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
 
+/**
+ * Represents a unique identifier for a Spark within a SparkConfiguration.
+ * 
+ * Implementations of this interface can be anything that provides proper equality semantics,
+ * such as a `data object`, `enum class`, or a specific class. The [StringKey] is provided
+ * as a default implementation for strings.
+ */
+interface Key {
+    companion object {
+        /**
+         * Creates a [StringKey] with the provided [value].
+         * Extends backwards compatibility for `Key("foo")` instantiations.
+         */
+        operator fun invoke(value: String): Key = StringKey(value)
+    }
+}
+
+/**
+ * A simple string-backed implementation of [Key].
+ * 
+ * @property value The underlying string representation of this key.
+ */
 @JvmInline
-value class Key(val value: String)
+value class StringKey(val value: String) : Key
 
 fun String.asKey(): Key = Key(this)
 
