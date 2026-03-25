@@ -48,6 +48,7 @@ internal constructor(
     val needs: Set<Key> = emptySet(),
     val type: SparkType = FIRE_AND_FORGET,
     val coroutineContext: CoroutineContext = EmptyCoroutineContext,
+    val importance: SparkImportance = SparkImportance.CRITICAL,
     val spark: Spark
 )
 
@@ -62,4 +63,15 @@ enum class SparkType {
     AWAITABLE,
     TRACKABLE,
     FIRE_AND_FORGET
+}
+
+/**
+ * Enum representing the importance of a Spark.
+ */
+enum class SparkImportance {
+    /** Fail-fast: If this Spark fails, initialization stops and throws immediately. */
+    CRITICAL,
+
+    /** Failure is logged and emitted via events, but doesn't stop other sparks. */
+    OPTIONAL
 }

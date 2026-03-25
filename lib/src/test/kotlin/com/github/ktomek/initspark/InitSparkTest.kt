@@ -34,8 +34,7 @@ class InitSparkTest {
             val config = buildSparks(emptySet()) {
                 await(
                     "await".asKey(),
-                    EmptyCoroutineContext,
-                    awaitableSpark
+                    spark = awaitableSpark
                 )
                 async(
                     "track".asKey(),
@@ -77,6 +76,7 @@ class InitSparkTest {
                         emptySet(),
                         SparkType.AWAITABLE,
                         EmptyCoroutineContext,
+                        SparkImportance.CRITICAL,
                         awaitableSpark
                     ),
                     SparkDeclaration(
@@ -84,6 +84,7 @@ class InitSparkTest {
                         emptySet(),
                         SparkType.TRACKABLE,
                         EmptyCoroutineContext,
+                        SparkImportance.CRITICAL,
                         trackableSpark
                     ),
                     SparkDeclaration(
@@ -91,6 +92,7 @@ class InitSparkTest {
                         emptySet(),
                         SparkType.FIRE_AND_FORGET,
                         EmptyCoroutineContext,
+                        SparkImportance.CRITICAL,
                         spark
                     )
                 )
@@ -126,6 +128,7 @@ class InitSparkTest {
                     emptySet(),
                     SparkType.AWAITABLE,
                     EmptyCoroutineContext,
+                    SparkImportance.CRITICAL,
                     spark1
                 ),
                 SparkDeclaration(
@@ -133,6 +136,7 @@ class InitSparkTest {
                     emptySet(),
                     SparkType.AWAITABLE,
                     EmptyCoroutineContext,
+                    SparkImportance.CRITICAL,
                     spark2
                 )
             )
@@ -152,7 +156,7 @@ class InitSparkTest {
         runTest {
             val spark = mockk<Spark>(relaxed = true)
             val config = buildSparks(emptySet()) {
-                spark("t".asKey(), emptySet(), EmptyCoroutineContext, spark)
+                async("t".asKey(), spark = spark)
             }
             val initSpark = InitSpark(config, this)
 
@@ -174,6 +178,7 @@ class InitSparkTest {
                         emptySet(),
                         SparkType.FIRE_AND_FORGET,
                         EmptyCoroutineContext,
+                        SparkImportance.CRITICAL,
                         spark
                     )
                 )
@@ -198,6 +203,7 @@ class InitSparkTest {
                     setOf("first".asKey()),
                     SparkType.TRACKABLE,
                     EmptyCoroutineContext,
+                    SparkImportance.CRITICAL,
                     shared
                 ),
                 SparkDeclaration(
@@ -205,6 +211,7 @@ class InitSparkTest {
                     emptySet(),
                     SparkType.AWAITABLE,
                     EmptyCoroutineContext,
+                    SparkImportance.CRITICAL,
                     first
                 )
             )
@@ -231,6 +238,7 @@ class InitSparkTest {
                         emptySet(),
                         SparkType.AWAITABLE,
                         EmptyCoroutineContext,
+                        SparkImportance.CRITICAL,
                         dep
                     ),
                     SparkDeclaration(
@@ -238,6 +246,7 @@ class InitSparkTest {
                         setOf("dep".asKey()),
                         SparkType.TRACKABLE,
                         EmptyCoroutineContext,
+                        SparkImportance.CRITICAL,
                         a
                     ),
                     SparkDeclaration(
@@ -245,6 +254,7 @@ class InitSparkTest {
                         setOf("dep".asKey()),
                         SparkType.FIRE_AND_FORGET,
                         EmptyCoroutineContext,
+                        SparkImportance.CRITICAL,
                         b
                     )
                 )
@@ -269,6 +279,7 @@ class InitSparkTest {
                     emptySet(),
                     SparkType.AWAITABLE,
                     EmptyCoroutineContext,
+                    SparkImportance.CRITICAL,
                     a
                 ),
                 SparkDeclaration(
@@ -276,6 +287,7 @@ class InitSparkTest {
                     setOf("a".asKey()),
                     SparkType.AWAITABLE,
                     EmptyCoroutineContext,
+                    SparkImportance.CRITICAL,
                     b
                 ),
                 SparkDeclaration(
@@ -283,6 +295,7 @@ class InitSparkTest {
                     setOf("b".asKey()),
                     SparkType.AWAITABLE,
                     EmptyCoroutineContext,
+                    SparkImportance.CRITICAL,
                     c
                 )
             )
@@ -302,7 +315,7 @@ class InitSparkTest {
     fun `GIVEN initialized InitSpark WHEN initialize called again THEN sparks run only once`() = runTest {
         val spark = mockk<Spark>(relaxed = true)
         val config = buildSparks(emptySet()) {
-            await("s".asKey(), EmptyCoroutineContext, spark)
+            await("s".asKey(), spark = spark)
         }
         val initSpark = InitSpark(config, this)
 
@@ -318,7 +331,7 @@ class InitSparkTest {
             coEvery { this@mockk.invoke() } coAnswers { delay(1000) }
         }
         val config = buildSparks(emptySet()) {
-            await("s".asKey(), EmptyCoroutineContext, spark)
+            await("s".asKey(), spark = spark)
         }
         val initSpark = InitSpark(config, this)
 
@@ -334,7 +347,7 @@ class InitSparkTest {
     fun `GIVEN initialized InitSpark WHEN initialize called THEN events are emitted`() = runTest {
         val spark = mockk<Spark>(relaxed = true)
         val config = buildSparks(emptySet()) {
-            await("s".asKey(), EmptyCoroutineContext, spark)
+            await("s".asKey(), spark = spark)
         }
         val initSpark = InitSpark(config, this)
 
@@ -383,6 +396,25 @@ class InitSparkTest {
             }
             assertTrue(awaitItem() is SparkEvent.Started)
             expectNoEvents()
+        }
+    }
+
+    @Test
+    fun `GIVEN failing optional spark WHEN initialize called THEN initialize does not throw`() = runTest {
+        val error = RuntimeException("Optional failure")
+        val spark = mockk<Spark> {
+            coEvery { this@mockk.invoke() } throws error
+        }
+        val config = buildSparks(emptySet()) {
+            await("s".asKey(), importance = SparkImportance.OPTIONAL, spark = spark)
+        }
+        val initSpark = InitSpark(config, this)
+
+        initSpark.events.test {
+            initSpark.initialize() // Should not throw
+            assertTrue(awaitItem() is SparkEvent.Started)
+            val failed = awaitItem() as SparkEvent.Failed
+            assertEquals(error, failed.error)
         }
     }
 }
