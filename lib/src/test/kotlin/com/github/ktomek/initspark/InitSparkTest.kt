@@ -15,6 +15,8 @@ import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertFalse
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -339,6 +341,28 @@ class InitSparkTest {
             initSpark.initialize()
             assertTrue(awaitItem() is SparkEvent.Started)
             assertTrue(awaitItem() is SparkEvent.Completed)
+        }
+    }
+
+    @Test
+    fun `GIVEN failing spark WHEN initialize called THEN Failed event is emitted`() = runTest {
+        val error = RuntimeException("Oh no!")
+        val spark = mockk<Spark> {
+            coEvery { this@mockk.invoke() } throws error
+        }
+        val config = buildSparks(emptySet()) {
+            await("s".asKey(), spark = spark)
+        }
+        val initSpark = InitSpark(config, this)
+
+        initSpark.events.test {
+            assertFailsWith<RuntimeException> {
+                initSpark.initialize()
+            }
+            assertTrue(awaitItem() is SparkEvent.Started)
+            val failed = awaitItem() as SparkEvent.Failed
+            assertEquals(error, failed.error)
+            assertEquals("s".asKey(), failed.key)
         }
     }
 }
