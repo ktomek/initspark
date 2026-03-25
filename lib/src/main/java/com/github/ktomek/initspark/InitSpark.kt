@@ -33,12 +33,18 @@ interface InitSpark : SparkState {
     val timing: SparkTimingInfo
 
     /**
-     * Starts the initialization process of all defined sparks.
+     * Starts the initialization process of all defined sparks suspending during execution.
      *
      * It ensures no duplicate keys exist, all dependencies are satisfied,
      * and then launches appropriate runners for each type of spark.
      */
-    fun initialize()
+    suspend fun initialize()
+
+    /**
+     * Starts the initialization process in a blocking manner using runBlocking.
+     * Provided for backward compatibility and pure Java usage.
+     */
+    fun initializeBlocking()
 }
 
 internal class InitSparkImpl(
@@ -63,8 +69,8 @@ internal class InitSparkImpl(
 
     override val isInitialized: StateFlow<Boolean> = _isInitialized.asStateFlow()
 
-    override fun initialize() {
-        runBlocking {
+    override suspend fun initialize() {
+        coroutineScope {
             startAwaitable()
             with(createAndRunSparksJobs()) {
                 scope.launch {
@@ -76,6 +82,10 @@ internal class InitSparkImpl(
                 }
             }
         }
+    }
+
+    override fun initializeBlocking() {
+        runBlocking { initialize() }
     }
 
     private fun createAndRunSparksJobs(): Map<Key, Deferred<Unit>> =
