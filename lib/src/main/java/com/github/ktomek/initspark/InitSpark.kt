@@ -64,13 +64,13 @@ internal class InitSparkImpl(
     private val sparkTimer: SparkTimer = SparkTimer.getInstance()
     private val isStarted = AtomicBoolean(false)
 
-    override val isTrackableInitialized: StateFlow<Boolean>
+    final override val isTrackableInitialized: StateFlow<Boolean>
         field: MutableStateFlow<Boolean> = MutableStateFlow(false)
 
-    override val isInitialized: StateFlow<Boolean>
+    final override val isInitialized: StateFlow<Boolean>
         field: MutableStateFlow<Boolean> = MutableStateFlow(false)
 
-    override val events: SharedFlow<SparkEvent>
+    final override val events: SharedFlow<SparkEvent>
         field: MutableSharedFlow<SparkEvent> = MutableSharedFlow()
 
     override suspend fun initialize() {
