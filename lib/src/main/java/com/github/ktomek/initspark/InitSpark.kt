@@ -1,6 +1,7 @@
 package com.github.ktomek.initspark
 
 import com.github.ktomek.initspark.SparkType.AWAITABLE
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
@@ -119,6 +120,8 @@ internal class InitSparkImpl(
         try {
             sparkTimer.measure(this) { spark() }
             events.emit(SparkEvent.Completed(key, sparkTimer.durationOf(this)!!))
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Throwable) {
             events.emit(SparkEvent.Failed(key, sparkTimer.durationOf(this)!!, e))
             throw e

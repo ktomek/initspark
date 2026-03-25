@@ -5,6 +5,7 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.coVerifyOrder
 import io.mockk.mockk
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
@@ -363,6 +364,25 @@ class InitSparkTest {
             val failed = awaitItem() as SparkEvent.Failed
             assertEquals(error, failed.error)
             assertEquals("s".asKey(), failed.key)
+        }
+    }
+
+    @Test
+    fun `GIVEN cancelled spark WHEN initialize called THEN no Failed event is emitted`() = runTest {
+        val spark = mockk<Spark> {
+            coEvery { this@mockk.invoke() } throws CancellationException("Cancelled")
+        }
+        val config = buildSparks(emptySet()) {
+            await("s".asKey(), spark = spark)
+        }
+        val initSpark = InitSpark(config, this)
+
+        initSpark.events.test {
+            assertFailsWith<CancellationException> {
+                initSpark.initialize()
+            }
+            assertTrue(awaitItem() is SparkEvent.Started)
+            expectNoEvents()
         }
     }
 }
