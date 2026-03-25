@@ -19,7 +19,8 @@ class InitSparkKtKtTest {
             override val isTrackableInitialized: StateFlow<Boolean> = MutableStateFlow(false)
             override val isInitialized = MutableStateFlow(false)
             override val timing = mockk<SparkTimingInfo>(relaxed = true)
-            override fun initialize() = Unit
+            override suspend fun initialize() = Unit
+            override fun initializeBlocking() = Unit
         }
 
         val job = launch { initSpark.waitUntilInitialized() }
