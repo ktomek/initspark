@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * Initializes and manages the lifecycle of a set of SparkDeclarations.
@@ -60,6 +61,7 @@ internal class InitSparkImpl(
      */
     override val timing: SparkTimingInfo = SparkTimer.getInstance()
     private val sparkTimer: SparkTimer = SparkTimer.getInstance()
+    private val isStarted = AtomicBoolean(false)
 
     private val _isTrackAbleInitialized = MutableStateFlow(false)
 
@@ -70,6 +72,7 @@ internal class InitSparkImpl(
     override val isInitialized: StateFlow<Boolean> = _isInitialized.asStateFlow()
 
     override suspend fun initialize() {
+        if (!isStarted.compareAndSet(false, true)) return
         coroutineScope {
             startAwaitable()
             with(createAndRunSparksJobs()) {

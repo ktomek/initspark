@@ -8,6 +8,7 @@ import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
@@ -292,5 +293,37 @@ class InitSparkTest {
             b.invoke()
             c.invoke()
         }
+    }
+
+    @Test
+    fun `GIVEN initialized InitSpark WHEN initialize called again THEN sparks run only once`() = runTest {
+        val spark = mockk<Spark>(relaxed = true)
+        val config = buildSparks(emptySet()) {
+            await("s".asKey(), EmptyCoroutineContext, spark)
+        }
+        val initSpark = InitSpark(config, this)
+
+        initSpark.initialize()
+        initSpark.initialize()
+
+        coVerify(exactly = 1) { spark.invoke() }
+    }
+
+    @Test
+    fun `GIVEN in progress InitSpark WHEN initialize called again THEN second call ignored`() = runTest {
+        val spark = mockk<Spark> {
+            coEvery { this@mockk.invoke() } coAnswers { delay(1000) }
+        }
+        val config = buildSparks(emptySet()) {
+            await("s".asKey(), EmptyCoroutineContext, spark)
+        }
+        val initSpark = InitSpark(config, this)
+
+        launch { initSpark.initialize() }
+        delay(100)
+        initSpark.initialize()
+
+        advanceUntilIdle()
+        coVerify(exactly = 1) { spark.invoke() }
     }
 }
