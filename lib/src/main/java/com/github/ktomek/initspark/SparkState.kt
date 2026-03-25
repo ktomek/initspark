@@ -1,6 +1,8 @@
 package com.github.ktomek.initspark
 
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlin.time.Duration
 
 /**
  * Exposes app‑wide init state: `false` until all Awaitable initializers are done, then `true`.
@@ -16,4 +18,20 @@ interface SparkState {
      * and [com.github.ktomek.initspark.SparkType.FIRE_AND_FORGET] sparks have completed.
      */
     val isInitialized: StateFlow<Boolean>
+
+    /**
+     * Emits lifecycle events as sparks are started, completed, or failed.
+     */
+    val events: SharedFlow<SparkEvent>
+}
+
+/**
+ * Sealed class representing atomic lifecycle events emitted by the InitSpark orchestrator.
+ */
+sealed class SparkEvent {
+    abstract val key: Key
+
+    data class Started(override val key: Key) : SparkEvent()
+    data class Completed(override val key: Key, val duration: Duration) : SparkEvent()
+    data class Failed(override val key: Key, val duration: Duration, val error: Throwable) : SparkEvent()
 }

@@ -326,4 +326,19 @@ class InitSparkTest {
         advanceUntilIdle()
         coVerify(exactly = 1) { spark.invoke() }
     }
+
+    @Test
+    fun `GIVEN initialized InitSpark WHEN initialize called THEN events are emitted`() = runTest {
+        val spark = mockk<Spark>(relaxed = true)
+        val config = buildSparks(emptySet()) {
+            await("s".asKey(), EmptyCoroutineContext, spark)
+        }
+        val initSpark = InitSpark(config, this)
+
+        initSpark.events.test {
+            initSpark.initialize()
+            assertTrue(awaitItem() is SparkEvent.Started)
+            assertTrue(awaitItem() is SparkEvent.Completed)
+        }
+    }
 }

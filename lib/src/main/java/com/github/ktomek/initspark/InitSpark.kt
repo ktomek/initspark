@@ -7,8 +7,11 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -71,6 +74,9 @@ internal class InitSparkImpl(
 
     override val isInitialized: StateFlow<Boolean> = _isInitialized.asStateFlow()
 
+    private val _events = MutableSharedFlow<SparkEvent>()
+    override val events: SharedFlow<SparkEvent> = _events.asSharedFlow()
+
     override suspend fun initialize() {
         if (!isStarted.compareAndSet(false, true)) return
         coroutineScope {
@@ -109,14 +115,26 @@ internal class InitSparkImpl(
             start = CoroutineStart.LAZY
         ) {
             needs.mapNotNull(jobs::get).awaitAll()
-            sparkTimer.measure(this@createJob) { spark() }
+            this@createJob.runWithEvents()
         }
+
+    @Suppress("TooGenericExceptionCaught")
+    private suspend fun SparkDeclaration.runWithEvents() {
+        _events.emit(SparkEvent.Started(key))
+        try {
+            sparkTimer.measure(this) { spark() }
+            _events.emit(SparkEvent.Completed(key, sparkTimer.durationOf(this)!!))
+        } catch (e: Throwable) {
+            _events.emit(SparkEvent.Failed(key, sparkTimer.durationOf(this)!!, e))
+            throw e
+        }
+    }
 
     private suspend fun startAwaitable() = config
         .declarations
         .filter { it.type == AWAITABLE }
         .forEach { sparkDeclaration ->
-            sparkTimer.measure(sparkDeclaration) { sparkDeclaration.spark() }
+            sparkDeclaration.runWithEvents()
         }
 
     private suspend fun startAsyncSparks(jobs: Map<Key, Deferred<Unit>>) {
