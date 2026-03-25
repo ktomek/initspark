@@ -124,7 +124,9 @@ internal class InitSparkImpl(
             throw e
         } catch (e: Throwable) {
             events.emit(SparkEvent.Failed(key, sparkTimer.durationOf(this)!!, e))
-            throw e
+            if (importance == SparkImportance.CRITICAL) {
+                throw e
+            }
         }
     }
 
