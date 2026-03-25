@@ -1,16 +1,17 @@
 package com.github.ktomek.initspark
 
 import com.github.ktomek.initspark.SparkType.AWAITABLE
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import java.util.concurrent.atomic.AtomicBoolean
@@ -63,13 +64,14 @@ internal class InitSparkImpl(
     private val sparkTimer: SparkTimer = SparkTimer.getInstance()
     private val isStarted = AtomicBoolean(false)
 
-    private val _isTrackAbleInitialized = MutableStateFlow(false)
+    final override val isTrackableInitialized: StateFlow<Boolean>
+        field: MutableStateFlow<Boolean> = MutableStateFlow(false)
 
-    override val isTrackableInitialized: StateFlow<Boolean> = _isTrackAbleInitialized.asStateFlow()
+    final override val isInitialized: StateFlow<Boolean>
+        field: MutableStateFlow<Boolean> = MutableStateFlow(false)
 
-    private val _isInitialized = MutableStateFlow(false)
-
-    override val isInitialized: StateFlow<Boolean> = _isInitialized.asStateFlow()
+    final override val events: SharedFlow<SparkEvent>
+        field: MutableSharedFlow<SparkEvent> = MutableSharedFlow()
 
     override suspend fun initialize() {
         if (!isStarted.compareAndSet(false, true)) return
@@ -81,7 +83,7 @@ internal class InitSparkImpl(
                         launch { startAsyncSparks(this@with) }
                         launch { startRunAndForgetSparks(this@with) }
                     }
-                    _isInitialized.update { true }
+                    isInitialized.value = true
                 }
             }
         }
@@ -109,14 +111,28 @@ internal class InitSparkImpl(
             start = CoroutineStart.LAZY
         ) {
             needs.mapNotNull(jobs::get).awaitAll()
-            sparkTimer.measure(this@createJob) { spark() }
+            this@createJob.runWithEvents()
         }
+
+    @Suppress("TooGenericExceptionCaught")
+    private suspend fun SparkDeclaration.runWithEvents() {
+        events.emit(SparkEvent.Started(key))
+        try {
+            sparkTimer.measure(this) { spark() }
+            events.emit(SparkEvent.Completed(key, sparkTimer.durationOf(this)!!))
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Throwable) {
+            events.emit(SparkEvent.Failed(key, sparkTimer.durationOf(this)!!, e))
+            throw e
+        }
+    }
 
     private suspend fun startAwaitable() = config
         .declarations
         .filter { it.type == AWAITABLE }
         .forEach { sparkDeclaration ->
-            sparkTimer.measure(sparkDeclaration) { sparkDeclaration.spark() }
+            sparkDeclaration.runWithEvents()
         }
 
     private suspend fun startAsyncSparks(jobs: Map<Key, Deferred<Unit>>) {
@@ -126,7 +142,7 @@ internal class InitSparkImpl(
             .map(SparkDeclaration::key)
             .mapNotNull(jobs::get)
             .awaitAll()
-        _isTrackAbleInitialized.update { true }
+        isTrackableInitialized.value = true
     }
 
     private suspend fun startRunAndForgetSparks(jobs: Map<Key, Deferred<Unit>>) {

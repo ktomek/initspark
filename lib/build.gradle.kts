@@ -20,6 +20,7 @@ java {
 kotlin {
     compilerOptions {
         jvmTarget = JvmTarget.JVM_17
+        freeCompilerArgs.add("-XXLanguage:+ExplicitBackingFields")
     }
     jvmToolchain(17)
 

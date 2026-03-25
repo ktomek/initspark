@@ -5,6 +5,7 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.coVerifyOrder
 import io.mockk.mockk
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
@@ -15,6 +16,8 @@ import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertFalse
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -325,5 +328,61 @@ class InitSparkTest {
 
         advanceUntilIdle()
         coVerify(exactly = 1) { spark.invoke() }
+    }
+
+    @Test
+    fun `GIVEN initialized InitSpark WHEN initialize called THEN events are emitted`() = runTest {
+        val spark = mockk<Spark>(relaxed = true)
+        val config = buildSparks(emptySet()) {
+            await("s".asKey(), EmptyCoroutineContext, spark)
+        }
+        val initSpark = InitSpark(config, this)
+
+        initSpark.events.test {
+            initSpark.initialize()
+            assertTrue(awaitItem() is SparkEvent.Started)
+            assertTrue(awaitItem() is SparkEvent.Completed)
+        }
+    }
+
+    @Test
+    fun `GIVEN failing spark WHEN initialize called THEN Failed event is emitted`() = runTest {
+        val error = RuntimeException("Oh no!")
+        val spark = mockk<Spark> {
+            coEvery { this@mockk.invoke() } throws error
+        }
+        val config = buildSparks(emptySet()) {
+            await("s".asKey(), spark = spark)
+        }
+        val initSpark = InitSpark(config, this)
+
+        initSpark.events.test {
+            assertFailsWith<RuntimeException> {
+                initSpark.initialize()
+            }
+            assertTrue(awaitItem() is SparkEvent.Started)
+            val failed = awaitItem() as SparkEvent.Failed
+            assertEquals(error, failed.error)
+            assertEquals("s".asKey(), failed.key)
+        }
+    }
+
+    @Test
+    fun `GIVEN cancelled spark WHEN initialize called THEN no Failed event is emitted`() = runTest {
+        val spark = mockk<Spark> {
+            coEvery { this@mockk.invoke() } throws CancellationException("Cancelled")
+        }
+        val config = buildSparks(emptySet()) {
+            await("s".asKey(), spark = spark)
+        }
+        val initSpark = InitSpark(config, this)
+
+        initSpark.events.test {
+            assertFailsWith<CancellationException> {
+                initSpark.initialize()
+            }
+            assertTrue(awaitItem() is SparkEvent.Started)
+            expectNoEvents()
+        }
     }
 }

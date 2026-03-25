@@ -2,6 +2,7 @@ package com.github.ktomek.initspark
 
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -18,6 +19,7 @@ class InitSparkKtKtTest {
         val initSpark = object : InitSpark {
             override val isTrackableInitialized: StateFlow<Boolean> = MutableStateFlow(false)
             override val isInitialized = MutableStateFlow(false)
+            override val events = MutableSharedFlow<SparkEvent>()
             override val timing = mockk<SparkTimingInfo>(relaxed = true)
             override suspend fun initialize() = Unit
             override fun initializeBlocking() = Unit
