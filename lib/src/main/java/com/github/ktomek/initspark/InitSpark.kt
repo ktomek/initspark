@@ -17,8 +17,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.retryWhen
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -124,34 +126,32 @@ internal class InitSparkImpl(
         }
 
     private suspend fun SparkDeclaration.runWithEvents() {
-        events.emit(SparkEvent.Started(key))
-
-        val error = flow<Throwable?> {
+        flow<Throwable?> {
             sparkTimer.measure(this@runWithEvents) { spark() }
             emit(null)
         }
             .retryWithPolicy(retryPolicy) { cause, attempt ->
-                sparkTimer
-                    .durationOf(this@runWithEvents)
+                sparkTimer.durationOf(this@runWithEvents)
                     .orDefault { ZERO }
                     .let { SparkEvent.Retry(key, attempt, it, cause) }
                     .letCo(events::emit)
             }
+            .onEach {
+                sparkTimer.durationOf(this@runWithEvents)
+                    .orDefault { ZERO }
+                    .let { SparkEvent.Completed(key, it) }
+                    .letCo(events::emit)
+            }
             .catch { e ->
                 if (e is CancellationException) throw e
-                emit(e)
+                sparkTimer.durationOf(this@runWithEvents)
+                    .orDefault { ZERO }
+                    .let { SparkEvent.Failed(key, it, e) }
+                    .letCo(events::emit)
+                if (importance == SparkImportance.CRITICAL) throw e
             }
-            .first()
-
-        val duration = sparkTimer.durationOf(this) ?: ZERO
-        if (error == null) {
-            events.emit(SparkEvent.Completed(key, duration))
-        } else {
-            events.emit(SparkEvent.Failed(key, duration, error))
-            if (importance == SparkImportance.CRITICAL) {
-                throw error
-            }
-        }
+            .onStart { events.emit(SparkEvent.Started(key)) }
+            .collect()
     }
 
     private suspend fun startAwaitable() = config
