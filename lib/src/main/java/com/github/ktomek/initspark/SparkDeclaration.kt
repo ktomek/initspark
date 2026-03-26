@@ -49,6 +49,7 @@ internal constructor(
     val type: SparkType = FIRE_AND_FORGET,
     val coroutineContext: CoroutineContext = EmptyCoroutineContext,
     val importance: SparkImportance = SparkImportance.CRITICAL,
+    val retryPolicy: RetryPolicy? = null,
     val spark: Spark
 )
 

@@ -1,5 +1,7 @@
 package com.github.ktomek.initspark
 
+import com.github.ktomek.funktional.letCo
+import com.github.ktomek.funktional.orDefault
 import com.github.ktomek.initspark.SparkType.AWAITABLE
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -8,13 +10,22 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.retryWhen
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.ZERO
 
 /**
  * Initializes and manages the lifecycle of a set of SparkDeclarations.
@@ -117,15 +128,31 @@ internal class InitSparkImpl(
     @Suppress("TooGenericExceptionCaught")
     private suspend fun SparkDeclaration.runWithEvents() {
         events.emit(SparkEvent.Started(key))
-        try {
-            sparkTimer.measure(this) { spark() }
-            events.emit(SparkEvent.Completed(key, sparkTimer.durationOf(this)!!))
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Throwable) {
-            events.emit(SparkEvent.Failed(key, sparkTimer.durationOf(this)!!, e))
+
+        val error = flow<Throwable?> {
+            sparkTimer.measure(this@runWithEvents) { spark() }
+            emit(null)
+        }
+            .retryWithPolicy(retryPolicy) { cause, attempt ->
+                sparkTimer
+                    .durationOf(this@runWithEvents)
+                    .orDefault { ZERO }
+                    .let { SparkEvent.Retry(key, attempt, it, cause)}
+                    .letCo(events::emit)
+            }
+            .catch { e ->
+                if (e is CancellationException) throw e
+                emit(e)
+            }
+            .first()
+
+        val duration = sparkTimer.durationOf(this) ?: ZERO
+        if (error == null) {
+            events.emit(SparkEvent.Completed(key, duration))
+        } else {
+            events.emit(SparkEvent.Failed(key, duration, error))
             if (importance == SparkImportance.CRITICAL) {
-                throw e
+                throw error
             }
         }
     }
@@ -133,9 +160,7 @@ internal class InitSparkImpl(
     private suspend fun startAwaitable() = config
         .declarations
         .filter { it.type == AWAITABLE }
-        .forEach { sparkDeclaration ->
-            sparkDeclaration.runWithEvents()
-        }
+        .forEach { sparkDeclaration -> sparkDeclaration.runWithEvents() }
 
     private suspend fun startAsyncSparks(jobs: Map<Key, Deferred<Unit>>) {
         config
@@ -154,6 +179,25 @@ internal class InitSparkImpl(
             .map(SparkDeclaration::key)
             .mapNotNull(jobs::get)
             .awaitAll()
+    }
+}
+
+private fun <T> Flow<T>.retryWithPolicy(
+    policy: RetryPolicy?,
+    onRetry: suspend (cause: Throwable, attempt: Int) -> Unit
+): Flow<T> = retryWhen { cause, attempt ->
+    if (cause is CancellationException) throw cause
+    val maxRetries = policy?.retryCount?.toLong() ?: 0L
+    if (attempt < maxRetries) {
+        val nextAttempt = (attempt + 1).toInt()
+        onRetry(cause, nextAttempt)
+        policy
+            ?.calculateDelay(nextAttempt)
+            ?.takeIf { delayMillis -> delayMillis > 0 }
+            ?.let { delayMillis -> delay(delayMillis) }
+        true
+    } else {
+        false
     }
 }
 

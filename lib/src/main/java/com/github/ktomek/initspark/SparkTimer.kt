@@ -53,7 +53,7 @@ internal class SparkTimer(private val timeProvider: TimeProvider = DefaultTimePr
             totalExecutionDeltaDuration = firstStartTime.elapsedNow()
 
             val type = declaration.type
-            val (startMark, _) = typeExecutionDeltaMarks[type]!!
+            val (startMark, _) = typeExecutionDeltaMarks[type] ?: (mark to null)
             typeExecutionDeltaMarks[type] = startMark to startMark.elapsedNow()
         }
     }

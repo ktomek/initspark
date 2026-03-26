@@ -26,12 +26,18 @@ interface SparkState {
 }
 
 /**
- * Sealed class representing atomic lifecycle events emitted by the InitSpark orchestrator.
+ * Sealed interface representing atomic lifecycle events emitted by the InitSpark orchestrator.
  */
-sealed class SparkEvent {
-    abstract val key: Key
+sealed interface SparkEvent {
+    val key: Key
 
-    data class Started(override val key: Key) : SparkEvent()
-    data class Completed(override val key: Key, val duration: Duration) : SparkEvent()
-    data class Failed(override val key: Key, val duration: Duration, val error: Throwable) : SparkEvent()
+    data class Started(override val key: Key) : SparkEvent
+    data class Completed(override val key: Key, val duration: Duration) : SparkEvent
+    data class Failed(override val key: Key, val duration: Duration, val error: Throwable) : SparkEvent
+    data class Retry(
+        override val key: Key,
+        val retryCount: Int,
+        val duration: Duration,
+        val error: Throwable
+    ) : SparkEvent
 }
