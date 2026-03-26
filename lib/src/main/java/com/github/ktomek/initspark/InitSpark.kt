@@ -126,9 +126,9 @@ internal class InitSparkImpl(
         }
 
     private suspend fun SparkDeclaration.runWithEvents() {
-        flow<Throwable?> {
+        flow {
             sparkTimer.measure(this@runWithEvents) { spark() }
-            emit(null)
+            emit(Unit)
         }
             .retryWithPolicy(retryPolicy) { cause, attempt ->
                 sparkTimer.durationOf(this@runWithEvents)
