@@ -76,7 +76,7 @@ class InitSparkTest {
                         needs = emptySet(),
                         type = SparkType.AWAITABLE,
                         coroutineContext = EmptyCoroutineContext,
-                        importance = SparkImportance.CRITICAL,
+                        policy = SparkPolicy(importance = SparkImportance.CRITICAL),
                         spark = awaitableSpark
                     ),
                     SparkDeclaration(
@@ -84,7 +84,7 @@ class InitSparkTest {
                         needs = emptySet(),
                         type = SparkType.TRACKABLE,
                         coroutineContext = EmptyCoroutineContext,
-                        importance = SparkImportance.CRITICAL,
+                        policy = SparkPolicy(importance = SparkImportance.CRITICAL),
                         spark = trackableSpark
                     ),
                     SparkDeclaration(
@@ -92,7 +92,7 @@ class InitSparkTest {
                         needs = emptySet(),
                         type = SparkType.FIRE_AND_FORGET,
                         coroutineContext = EmptyCoroutineContext,
-                        importance = SparkImportance.CRITICAL,
+                        policy = SparkPolicy(importance = SparkImportance.CRITICAL),
                         spark = spark
                     )
                 )
@@ -128,7 +128,7 @@ class InitSparkTest {
                     needs = emptySet(),
                     type = SparkType.AWAITABLE,
                     coroutineContext = EmptyCoroutineContext,
-                    importance = SparkImportance.CRITICAL,
+                    policy = SparkPolicy(importance = SparkImportance.CRITICAL),
                     spark = spark1
                 ),
                 SparkDeclaration(
@@ -136,7 +136,7 @@ class InitSparkTest {
                     needs = emptySet(),
                     type = SparkType.AWAITABLE,
                     coroutineContext = EmptyCoroutineContext,
-                    importance = SparkImportance.CRITICAL,
+                    policy = SparkPolicy(importance = SparkImportance.CRITICAL),
                     spark = spark2
                 )
             )
@@ -178,7 +178,7 @@ class InitSparkTest {
                         needs = emptySet(),
                         type = SparkType.FIRE_AND_FORGET,
                         coroutineContext = EmptyCoroutineContext,
-                        importance = SparkImportance.CRITICAL,
+                        policy = SparkPolicy(importance = SparkImportance.CRITICAL),
                         spark = spark
                     )
                 )
@@ -203,7 +203,7 @@ class InitSparkTest {
                     needs = setOf("first".asKey()),
                     type = SparkType.TRACKABLE,
                     coroutineContext = EmptyCoroutineContext,
-                    importance = SparkImportance.CRITICAL,
+                    policy = SparkPolicy(importance = SparkImportance.CRITICAL),
                     spark = shared
                 ),
                 SparkDeclaration(
@@ -211,7 +211,7 @@ class InitSparkTest {
                     needs = emptySet(),
                     type = SparkType.AWAITABLE,
                     coroutineContext = EmptyCoroutineContext,
-                    importance = SparkImportance.CRITICAL,
+                    policy = SparkPolicy(importance = SparkImportance.CRITICAL),
                     spark = first
                 )
             )
@@ -238,7 +238,7 @@ class InitSparkTest {
                         needs = emptySet(),
                         type = SparkType.AWAITABLE,
                         coroutineContext = EmptyCoroutineContext,
-                        importance = SparkImportance.CRITICAL,
+                        policy = SparkPolicy(importance = SparkImportance.CRITICAL),
                         spark = dep
                     ),
                     SparkDeclaration(
@@ -246,7 +246,7 @@ class InitSparkTest {
                         needs = setOf("dep".asKey()),
                         type = SparkType.TRACKABLE,
                         coroutineContext = EmptyCoroutineContext,
-                        importance = SparkImportance.CRITICAL,
+                        policy = SparkPolicy(importance = SparkImportance.CRITICAL),
                         spark = a
                     ),
                     SparkDeclaration(
@@ -254,7 +254,7 @@ class InitSparkTest {
                         needs = setOf("dep".asKey()),
                         type = SparkType.FIRE_AND_FORGET,
                         coroutineContext = EmptyCoroutineContext,
-                        importance = SparkImportance.CRITICAL,
+                        policy = SparkPolicy(importance = SparkImportance.CRITICAL),
                         spark = b
                     )
                 )
@@ -279,7 +279,7 @@ class InitSparkTest {
                     needs = emptySet(),
                     type = SparkType.AWAITABLE,
                     coroutineContext = EmptyCoroutineContext,
-                    importance = SparkImportance.CRITICAL,
+                    policy = SparkPolicy(importance = SparkImportance.CRITICAL),
                     spark = a
                 ),
                 SparkDeclaration(
@@ -287,7 +287,7 @@ class InitSparkTest {
                     needs = setOf("a".asKey()),
                     type = SparkType.AWAITABLE,
                     coroutineContext = EmptyCoroutineContext,
-                    importance = SparkImportance.CRITICAL,
+                    policy = SparkPolicy(importance = SparkImportance.CRITICAL),
                     spark = b
                 ),
                 SparkDeclaration(
@@ -295,7 +295,7 @@ class InitSparkTest {
                     needs = setOf("b".asKey()),
                     type = SparkType.AWAITABLE,
                     coroutineContext = EmptyCoroutineContext,
-                    importance = SparkImportance.CRITICAL,
+                    policy = SparkPolicy(importance = SparkImportance.CRITICAL),
                     spark = c
                 )
             )
@@ -406,7 +406,7 @@ class InitSparkTest {
             coEvery { this@mockk.invoke() } throws error
         }
         val config = buildSparks(emptySet()) {
-            await(key = "s".asKey(), importance = SparkImportance.OPTIONAL, spark = spark)
+            await(key = "s".asKey(), policy = SparkPolicy(importance = SparkImportance.OPTIONAL), spark = spark)
         }
         val initSpark = InitSpark(config, this)
 
@@ -419,6 +419,7 @@ class InitSparkTest {
     }
 
     @Test
+    @Suppress("TooGenericExceptionThrown")
     fun `GIVEN spark with retryCount WHEN fails twice and succeeds on third THEN initialization completes`() =
         runTest {
             val spark = mockk<Spark>()
@@ -429,7 +430,7 @@ class InitSparkTest {
             }
 
             val config = buildSparks(emptySet()) {
-                await(key = "retry".asKey(), retryCount = 2, spark = spark)
+                await(key = "retry".asKey(), policy = SparkPolicy(retry = RetryPolicy(2)), spark = spark)
             }
             val initSpark = InitSpark(config, this)
 
@@ -455,7 +456,7 @@ class InitSparkTest {
         }
 
         val config = buildSparks(emptySet()) {
-            await(key = "fail".asKey(), retryCount = 2, spark = spark)
+            await(key = "fail".asKey(), policy = SparkPolicy(retry = RetryPolicy(2)), spark = spark)
         }
         val initSpark = InitSpark(config, this)
 
@@ -482,8 +483,7 @@ class InitSparkTest {
         val config = buildSparks(emptySet()) {
             await(
                 key = "delay".asKey(),
-                retryCount = 1,
-                backoff = Backoff.Fixed(1000),
+                policy = SparkPolicy(retry = RetryPolicy(1, Backoff.Fixed(1000))),
                 spark = spark
             )
         }
@@ -511,8 +511,7 @@ class InitSparkTest {
         val config = buildSparks(emptySet()) {
             await(
                 key = "expo".asKey(),
-                retryCount = 2,
-                backoff = Backoff.Exponential(1000, 2.0),
+                policy = SparkPolicy(retry = RetryPolicy(2, Backoff.Exponential(1000, 2.0))),
                 spark = spark
             )
         }

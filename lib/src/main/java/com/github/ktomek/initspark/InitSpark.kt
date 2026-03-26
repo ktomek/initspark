@@ -17,14 +17,12 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.retryWhen
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import java.util.concurrent.atomic.AtomicBoolean
-import kotlin.time.Duration
 import kotlin.time.Duration.Companion.ZERO
 
 /**
@@ -125,7 +123,6 @@ internal class InitSparkImpl(
             this@createJob.runWithEvents()
         }
 
-    @Suppress("TooGenericExceptionCaught")
     private suspend fun SparkDeclaration.runWithEvents() {
         events.emit(SparkEvent.Started(key))
 
@@ -137,7 +134,7 @@ internal class InitSparkImpl(
                 sparkTimer
                     .durationOf(this@runWithEvents)
                     .orDefault { ZERO }
-                    .let { SparkEvent.Retry(key, attempt, it, cause)}
+                    .let { SparkEvent.Retry(key, attempt, it, cause) }
                     .letCo(events::emit)
             }
             .catch { e ->

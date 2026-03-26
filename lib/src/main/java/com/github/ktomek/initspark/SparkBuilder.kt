@@ -22,10 +22,8 @@ class SparkBuilder internal constructor(val sparks: Set<Spark>) {
     fun await(
         key: Key? = null,
         context: CoroutineContext = EmptyCoroutineContext,
-        importance: SparkImportance = SparkImportance.CRITICAL,
-        retryCount: Int = 0,
-        backoff: Backoff = Backoff.None,
-        spark: Spark
+        policy: SparkPolicy = SparkPolicy(),
+        spark: Spark,
     ) {
         declarations.add(
             spark.toDeclaration(
@@ -33,8 +31,7 @@ class SparkBuilder internal constructor(val sparks: Set<Spark>) {
                 type = AWAITABLE,
                 needs = emptySet(),
                 context = context,
-                importance = importance,
-                retryPolicy = if (retryCount > 0) RetryPolicy(retryCount, backoff) else null
+                policy = policy
             )
         )
     }
@@ -51,16 +48,12 @@ class SparkBuilder internal constructor(val sparks: Set<Spark>) {
     inline fun <reified T : Spark> await(
         key: Key? = null,
         context: CoroutineContext = EmptyCoroutineContext,
-        importance: SparkImportance = SparkImportance.CRITICAL,
-        retryCount: Int = 0,
-        backoff: Backoff = Backoff.None,
+        policy: SparkPolicy = SparkPolicy(),
     ) {
         await(
             key = key,
             context = context,
-            importance = importance,
-            retryCount = retryCount,
-            backoff = backoff,
+            policy = policy,
             spark = sparks.requireSpark<T>()
         )
     }
@@ -77,9 +70,7 @@ class SparkBuilder internal constructor(val sparks: Set<Spark>) {
         key: Key? = null,
         needs: Set<Key> = emptySet(),
         context: CoroutineContext = EmptyCoroutineContext,
-        importance: SparkImportance = SparkImportance.CRITICAL,
-        retryCount: Int = 0,
-        backoff: Backoff = Backoff.None,
+        policy: SparkPolicy = SparkPolicy(),
         spark: Spark
     ) {
         declarations.add(
@@ -88,8 +79,7 @@ class SparkBuilder internal constructor(val sparks: Set<Spark>) {
                 type = TRACKABLE,
                 needs = needs,
                 context = context,
-                importance = importance,
-                retryPolicy = if (retryCount > 0) RetryPolicy(retryCount, backoff) else null
+                policy = policy
             )
         )
     }
@@ -98,17 +88,13 @@ class SparkBuilder internal constructor(val sparks: Set<Spark>) {
         key: Key? = null,
         needs: Set<Key> = emptySet(),
         context: CoroutineContext = EmptyCoroutineContext,
-        importance: SparkImportance = SparkImportance.CRITICAL,
-        retryCount: Int = 0,
-        backoff: Backoff = Backoff.None,
+        policy: SparkPolicy = SparkPolicy(),
     ) {
         async(
             key = key,
             needs = needs,
             context = context,
-            importance = importance,
-            retryCount = retryCount,
-            backoff = backoff,
+            policy = policy,
             spark = sparks.requireSpark<T>()
         )
     }
@@ -125,9 +111,7 @@ class SparkBuilder internal constructor(val sparks: Set<Spark>) {
         key: Key? = null,
         needs: Set<Key> = emptySet(),
         context: CoroutineContext = EmptyCoroutineContext,
-        importance: SparkImportance = SparkImportance.CRITICAL,
-        retryCount: Int = 0,
-        backoff: Backoff = Backoff.None,
+        policy: SparkPolicy = SparkPolicy(),
         spark: Spark
     ) {
         declarations.add(
@@ -136,8 +120,7 @@ class SparkBuilder internal constructor(val sparks: Set<Spark>) {
                 type = FIRE_AND_FORGET,
                 needs = needs,
                 context = context,
-                importance = importance,
-                retryPolicy = if (retryCount > 0) RetryPolicy(retryCount, backoff) else null
+                policy = policy
             )
         )
     }
@@ -153,17 +136,13 @@ class SparkBuilder internal constructor(val sparks: Set<Spark>) {
         key: Key? = null,
         needs: Set<Key> = emptySet(),
         context: CoroutineContext = EmptyCoroutineContext,
-        importance: SparkImportance = SparkImportance.CRITICAL,
-        retryCount: Int = 0,
-        backoff: Backoff = Backoff.None,
+        policy: SparkPolicy = SparkPolicy(),
     ) {
         spark(
             key = key,
             needs = needs,
             context = context,
-            importance = importance,
-            retryCount = retryCount,
-            backoff = backoff,
+            policy = policy,
             spark = sparks.requireSpark<T>()
         )
     }
@@ -173,15 +152,13 @@ class SparkBuilder internal constructor(val sparks: Set<Spark>) {
         type: SparkType,
         needs: Set<Key>,
         context: CoroutineContext,
-        importance: SparkImportance,
-        retryPolicy: RetryPolicy? = null,
+        policy: SparkPolicy
     ): SparkDeclaration = SparkDeclaration(
         key = key ?: javaClass.simpleName.asKey(),
         needs = needs,
         type = type,
         coroutineContext = context,
-        importance = importance,
-        retryPolicy = retryPolicy,
+        policy = policy,
         spark = this
     )
 
