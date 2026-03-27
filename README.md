@@ -15,89 +15,223 @@
 
 - 🔥 Declarative DSL to define sparks
 - ⏱️ Time tracking for individual sparks and phases
-- ⚙️ Support for `await`, `track`, and `spark` styles:
-  - `await`: sequential execution
-  - `track`: asynchronous with completion tracking
-  - `spark`: fire-and-forget
-- 🌲 Dependency management between sparks
+- ⚙️ Three execution modes: `await`, `async`, and `spark`
+- 🌲 Dependency management between sparks (with cycle detection)
+- ⚠️ Spark importance levels: `CRITICAL` (fail-fast) and `OPTIONAL` (failure-tolerant)
+- 🔁 Configurable retry policies with `None`, `Fixed`, and `Exponential` backoff
+- 📡 Reactive `SparkEvent` stream for lifecycle monitoring
+- 🔑 Flexible `Key` interface for spark identification
 - 🧪 Built-in testing support
-- 📊 Access to performance metrics via `SparkTimer`
+- 📊 Performance metrics via `SparkTimingInfo`
+
+## Installation
+
+Add to your `build.gradle`:
+
+```kotlin
+repositories {
+    maven("https://jitpack.io")
+}
+
+dependencies {
+    implementation("com.github.ktomek:initspark:<version>")
+}
+```
 
 ## Getting Started
 
+### 1. Implement `Spark`
+
 ```kotlin
-val sparks = setOf(...)
+class DatabaseSpark @Inject constructor(...) : Spark {
+    override suspend fun execute() { /* initialize database */ }
+}
+```
+
+### 2. Build a configuration
+
+```kotlin
+val sparks = setOf(
+    DatabaseSpark(),
+    NotificationSpark(),
+    AnalyticsSpark(),
+    /* ... */
+)
 
 val config = buildSparks(sparks) {
+    // Sequential, must complete before next spark starts
     await { System.loadLibrary("crypto-lib") }
-
     await<LoggerSpark>()
     await<ActivityLifecycleSpark>()
-    await<AppObserverSpark>()
 
     val ioContext = Dispatchers.IO
     val coreDeps = setOf(Key("Database"))
 
-    async<DatabaseSpark>(key = "Database".asKey(), context = ioContext)
+    // Parallel, completion is tracked
+    async<DatabaseSpark>(
+        key = "Database".asKey(),
+        context = ioContext
+    )
     async<NotificationSpark>(
         context = ioContext,
-        needs = coreDeps
+        needs = coreDeps,
+        policy = SparkPolicy(importance = SparkImportance.OPTIONAL)
     )
     async<AnalyticsSpark>(
         context = ioContext,
-        needs = coreDeps
+        needs = coreDeps,
+        policy = SparkPolicy(
+            retry = RetryPolicy(
+                retryCount = 3,
+                backoff = Backoff.Exponential(initialDelayMillis = 200)
+            )
+        )
     )
-    async<BackgroundServiceSpark>(
-        context = ioContext,
-        needs = coreDeps
-    )
-    async<MessagingSpark>(
-        context = ioContext,
-        needs = coreDeps
-    )
-    async<AttributionSpark>(
-        context = ioContext,
-        needs = coreDeps
-    )
-    spark<ConsentManagerSpark>(
-        context = ioContext,
-        needs = coreDeps
-    )
+
+    // Parallel, fire-and-forget (not tracked)
+    spark<ConsentManagerSpark>(context = ioContext, needs = coreDeps)
 }
 ```
 
-Then run with:
+### 3. Run
 
 ```kotlin
-val initSpark = InitSpark.create(config, CoroutineScope(Dispatchers.Default))
+val initSpark = InitSpark(config, CoroutineScope(Dispatchers.Default))
+
+// Suspending version (preferred)
 initSpark.initialize()
+
+// Blocking version (for Java interop or legacy code)
+initSpark.initializeBlocking()
 ```
 
 ## Spark Types
 
-- `await {}`: runs sequentially, blocks next spark until finished
-- `async(key) {}`: runs in parallel, sets `isInitialized` when done
-- `spark(key) {}`: runs in parallel without tracking
+| Builder function | Execution | Tracked | Default key |
+|---|---|---|---|
+| `await { }` / `await<T>()` | Sequential | ✅ | Class simple name |
+| `async { }` / `async<T>()` | Parallel | ✅ | Class simple name |
+| `spark { }` / `spark<T>()` | Parallel | ❌ | Class simple name |
+
+Each builder function accepts:
+
+| Parameter | Type | Description |
+|---|---|---|
+| `key` | `Key?` | Optional unique identifier (defaults to class name) |
+| `needs` | `Set<Key>` | Keys of sparks that must complete first |
+| `context` | `CoroutineContext` | Coroutine dispatcher |
+| `policy` | `SparkPolicy` | Importance and retry configuration |
+
+## Spark Keys
+
+`Key` is an interface, letting you use any type with proper equality — `data object`, `enum` entry, or a plain string:
+
+```kotlin
+// String-backed key (default)
+"Database".asKey()           // or Key("Database")
+
+// Custom key type (recommended for robustness)
+data object DatabaseKey : Key
+enum class AppKey : Key { DATABASE, ANALYTICS }
+```
+
+## Importance Levels
+
+Control how failures propagate using `SparkPolicy`:
+
+```kotlin
+// CRITICAL (default): failure throws and halts initialization
+async<DatabaseSpark>(policy = SparkPolicy(importance = SparkImportance.CRITICAL))
+
+// OPTIONAL: failure is logged and emitted as a SparkEvent.Failed, but other sparks continue
+async<AnalyticsSpark>(policy = SparkPolicy(importance = SparkImportance.OPTIONAL))
+```
+
+## Retry Policies
+
+Attach a `RetryPolicy` to automatically retry failing sparks:
+
+```kotlin
+val policy = SparkPolicy(
+    retry = RetryPolicy(
+        retryCount = 3,
+        backoff = Backoff.Exponential(initialDelayMillis = 100L, factor = 2.0)
+    )
+)
+```
+
+### Backoff strategies
+
+| Strategy | Description |
+|---|---|
+| `Backoff.None` | No delay between retries (default) |
+| `Backoff.Fixed(delayMillis)` | Constant delay |
+| `Backoff.Exponential(initialDelayMillis, factor)` | Delay × factor on each attempt |
+
+## Observing Lifecycle Events
+
+Use the `events` flow to receive real-time lifecycle updates from the orchestrator:
+
+```kotlin
+launch {
+    initSpark.events.collect { event ->
+        when (event) {
+            is SparkEvent.Started   -> log("▶ ${event.key} started")
+            is SparkEvent.Completed -> log("✅ ${event.key} done in ${event.duration}")
+            is SparkEvent.Failed    -> log("❌ ${event.key} failed: ${event.error}")
+            is SparkEvent.Retry     -> log("🔁 ${event.key} retry #${event.retryCount}")
+        }
+    }
+}
+```
+
+## Waiting for Initialization
+
+```kotlin
+// Suspend until all TRACKABLE sparks are done
+initSpark.waitUntilTrackableInitialized()
+
+// Suspend until ALL sparks (including fire-and-forget) are done
+initSpark.waitUntilInitialized()
+
+// Or observe via StateFlow
+initSpark.isTrackableInitialized.collect { ready -> if (ready) onReady() }
+initSpark.isInitialized.collect { ready -> if (ready) onFullyReady() }
+```
 
 ## Timing API
 
-Track execution times with structured logging and insight into the InitSpark lifecycle:
+Access detailed performance metrics after initialization:
 
 ```kotlin
-spark.waitUntilInitialized()
-with(spark.timing) {
+initSpark.waitUntilInitialized()
+
+with(initSpark.timing) {
+    // Per-spark durations
     allDurations().forEach { (declaration, duration) ->
-        Timber.d("Spark [${declaration.type}] '${declaration.key}' completed in $duration")
+        Timber.d("Spark '${declaration.key}' [${declaration.type}] took $duration")
     }
 
-    val windows = windowByType()
-    Timber.d("Awaitable phase duration: ${windows[SparkType.AWAITABLE]}")
-    Timber.d("Trackable phase duration: ${windows[SparkType.TRACKABLE]}")
-    Timber.d("Fire-and-forget phase duration: ${windows[SparkType.FIRE_AND_FORGET]}")
-    Timber.d("Total spark window duration: ${windowDuration()}")
-    Timber.d("Overall InitSpark total duration: ${sumOfDurations()}")
+    // Cumulative total (sum of all individual durations)
+    Timber.d("Sum of all durations: ${sumOfDurations()}")
+    Timber.d("Sum by type: ${sumOfDurationsByType()}")
+
+    // Wall-clock window (first start → last finish)
+    Timber.d("Total wall-clock time: ${executionDelta()}")
+    Timber.d("Wall-clock by type: ${executionDeltaByType()}")
 }
 ```
+
+### Timing methods
+
+| Method | Returns |
+|---|---|
+| `durationOf(declaration)` | Duration for one spark, or `null` |
+| `allDurations()` | `Map<SparkDeclaration, Duration>` |
+| `sumOfDurations()` | Cumulative sum of all measured durations |
+| `sumOfDurationsByType()` | Cumulative sum grouped by `SparkType` |
+| `executionDelta()` | Wall-clock window (first start → last stop) |
+| `executionDeltaByType()` | Wall-clock window grouped by `SparkType` |
 
 ## Contributing
 
@@ -119,7 +253,7 @@ MIT License
 Copyright (c) 2023 ktomek
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the \"Software\"), to deal
+of this software and associated documentation files (the "Software"), to deal
 in the Software without restriction, including without limitation the rights
 to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 copies of the Software, and to permit persons to whom the Software is
@@ -128,7 +262,7 @@ furnished to do so, subject to the following conditions:
 The above copyright notice and this permission notice shall be included in all
 copies or substantial portions of the Software.
 
-THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
 AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
