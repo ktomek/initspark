@@ -48,8 +48,22 @@ internal constructor(
     val needs: Set<Key> = emptySet(),
     val type: SparkType = FIRE_AND_FORGET,
     val coroutineContext: CoroutineContext = EmptyCoroutineContext,
-    val importance: SparkImportance = SparkImportance.CRITICAL,
+    val policy: SparkPolicy = SparkPolicy(),
     val spark: Spark
+) {
+    val importance: SparkImportance get() = policy.importance
+    val retryPolicy: RetryPolicy? get() = policy.retry
+}
+
+/**
+ * Policy defining execution behavior of a Spark.
+ *
+ * @property importance Importance level (CRITICAL or OPTIONAL).
+ * @property retry Optional retry strategy.
+ */
+data class SparkPolicy(
+    val importance: SparkImportance = SparkImportance.CRITICAL,
+    val retry: RetryPolicy? = null
 )
 
 /**

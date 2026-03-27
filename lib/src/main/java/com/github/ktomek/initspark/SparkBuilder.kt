@@ -22,8 +22,8 @@ class SparkBuilder internal constructor(val sparks: Set<Spark>) {
     fun await(
         key: Key? = null,
         context: CoroutineContext = EmptyCoroutineContext,
-        importance: SparkImportance = SparkImportance.CRITICAL,
-        spark: Spark
+        policy: SparkPolicy = SparkPolicy(),
+        spark: Spark,
     ) {
         declarations.add(
             spark.toDeclaration(
@@ -31,7 +31,7 @@ class SparkBuilder internal constructor(val sparks: Set<Spark>) {
                 type = AWAITABLE,
                 needs = emptySet(),
                 context = context,
-                importance = importance
+                policy = policy
             )
         )
     }
@@ -48,9 +48,14 @@ class SparkBuilder internal constructor(val sparks: Set<Spark>) {
     inline fun <reified T : Spark> await(
         key: Key? = null,
         context: CoroutineContext = EmptyCoroutineContext,
-        importance: SparkImportance = SparkImportance.CRITICAL,
+        policy: SparkPolicy = SparkPolicy(),
     ) {
-        await(key = key, context = context, importance = importance, spark = sparks.requireSpark<T>())
+        await(
+            key = key,
+            context = context,
+            policy = policy,
+            spark = sparks.requireSpark<T>()
+        )
     }
 
     /**
@@ -65,7 +70,7 @@ class SparkBuilder internal constructor(val sparks: Set<Spark>) {
         key: Key? = null,
         needs: Set<Key> = emptySet(),
         context: CoroutineContext = EmptyCoroutineContext,
-        importance: SparkImportance = SparkImportance.CRITICAL,
+        policy: SparkPolicy = SparkPolicy(),
         spark: Spark
     ) {
         declarations.add(
@@ -74,7 +79,7 @@ class SparkBuilder internal constructor(val sparks: Set<Spark>) {
                 type = TRACKABLE,
                 needs = needs,
                 context = context,
-                importance = importance
+                policy = policy
             )
         )
     }
@@ -83,9 +88,15 @@ class SparkBuilder internal constructor(val sparks: Set<Spark>) {
         key: Key? = null,
         needs: Set<Key> = emptySet(),
         context: CoroutineContext = EmptyCoroutineContext,
-        importance: SparkImportance = SparkImportance.CRITICAL,
+        policy: SparkPolicy = SparkPolicy(),
     ) {
-        async(key = key, needs = needs, context = context, importance = importance, spark = sparks.requireSpark<T>())
+        async(
+            key = key,
+            needs = needs,
+            context = context,
+            policy = policy,
+            spark = sparks.requireSpark<T>()
+        )
     }
 
     /**
@@ -100,7 +111,7 @@ class SparkBuilder internal constructor(val sparks: Set<Spark>) {
         key: Key? = null,
         needs: Set<Key> = emptySet(),
         context: CoroutineContext = EmptyCoroutineContext,
-        importance: SparkImportance = SparkImportance.CRITICAL,
+        policy: SparkPolicy = SparkPolicy(),
         spark: Spark
     ) {
         declarations.add(
@@ -109,7 +120,7 @@ class SparkBuilder internal constructor(val sparks: Set<Spark>) {
                 type = FIRE_AND_FORGET,
                 needs = needs,
                 context = context,
-                importance = importance
+                policy = policy
             )
         )
     }
@@ -125,9 +136,15 @@ class SparkBuilder internal constructor(val sparks: Set<Spark>) {
         key: Key? = null,
         needs: Set<Key> = emptySet(),
         context: CoroutineContext = EmptyCoroutineContext,
-        importance: SparkImportance = SparkImportance.CRITICAL,
+        policy: SparkPolicy = SparkPolicy(),
     ) {
-        spark(key = key, needs = needs, context = context, importance = importance, spark = sparks.requireSpark<T>())
+        spark(
+            key = key,
+            needs = needs,
+            context = context,
+            policy = policy,
+            spark = sparks.requireSpark<T>()
+        )
     }
 
     private fun Spark.toDeclaration(
@@ -135,13 +152,13 @@ class SparkBuilder internal constructor(val sparks: Set<Spark>) {
         type: SparkType,
         needs: Set<Key>,
         context: CoroutineContext,
-        importance: SparkImportance,
+        policy: SparkPolicy
     ): SparkDeclaration = SparkDeclaration(
         key = key ?: javaClass.simpleName.asKey(),
         needs = needs,
         type = type,
         coroutineContext = context,
-        importance = importance,
+        policy = policy,
         spark = this
     )
 

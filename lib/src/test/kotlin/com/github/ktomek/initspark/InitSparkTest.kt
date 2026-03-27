@@ -72,28 +72,28 @@ class InitSparkTest {
             val config = SparkConfiguration(
                 listOf(
                     SparkDeclaration(
-                        "await".asKey(),
-                        emptySet(),
-                        SparkType.AWAITABLE,
-                        EmptyCoroutineContext,
-                        SparkImportance.CRITICAL,
-                        awaitableSpark
+                        key = "await".asKey(),
+                        needs = emptySet(),
+                        type = SparkType.AWAITABLE,
+                        coroutineContext = EmptyCoroutineContext,
+                        policy = SparkPolicy(importance = SparkImportance.CRITICAL),
+                        spark = awaitableSpark
                     ),
                     SparkDeclaration(
-                        "track".asKey(),
-                        emptySet(),
-                        SparkType.TRACKABLE,
-                        EmptyCoroutineContext,
-                        SparkImportance.CRITICAL,
-                        trackableSpark
+                        key = "track".asKey(),
+                        needs = emptySet(),
+                        type = SparkType.TRACKABLE,
+                        coroutineContext = EmptyCoroutineContext,
+                        policy = SparkPolicy(importance = SparkImportance.CRITICAL),
+                        spark = trackableSpark
                     ),
                     SparkDeclaration(
-                        "default".asKey(),
-                        emptySet(),
-                        SparkType.FIRE_AND_FORGET,
-                        EmptyCoroutineContext,
-                        SparkImportance.CRITICAL,
-                        spark
+                        key = "default".asKey(),
+                        needs = emptySet(),
+                        type = SparkType.FIRE_AND_FORGET,
+                        coroutineContext = EmptyCoroutineContext,
+                        policy = SparkPolicy(importance = SparkImportance.CRITICAL),
+                        spark = spark
                     )
                 )
             )
@@ -124,20 +124,20 @@ class InitSparkTest {
         val config = SparkConfiguration(
             listOf(
                 SparkDeclaration(
-                    "s1".asKey(),
-                    emptySet(),
-                    SparkType.AWAITABLE,
-                    EmptyCoroutineContext,
-                    SparkImportance.CRITICAL,
-                    spark1
+                    key = "s1".asKey(),
+                    needs = emptySet(),
+                    type = SparkType.AWAITABLE,
+                    coroutineContext = EmptyCoroutineContext,
+                    policy = SparkPolicy(importance = SparkImportance.CRITICAL),
+                    spark = spark1
                 ),
                 SparkDeclaration(
-                    "s2".asKey(),
-                    emptySet(),
-                    SparkType.AWAITABLE,
-                    EmptyCoroutineContext,
-                    SparkImportance.CRITICAL,
-                    spark2
+                    key = "s2".asKey(),
+                    needs = emptySet(),
+                    type = SparkType.AWAITABLE,
+                    coroutineContext = EmptyCoroutineContext,
+                    policy = SparkPolicy(importance = SparkImportance.CRITICAL),
+                    spark = spark2
                 )
             )
         )
@@ -174,12 +174,12 @@ class InitSparkTest {
             val config = SparkConfiguration(
                 listOf(
                     SparkDeclaration(
-                        "d".asKey(),
-                        emptySet(),
-                        SparkType.FIRE_AND_FORGET,
-                        EmptyCoroutineContext,
-                        SparkImportance.CRITICAL,
-                        spark
+                        key = "d".asKey(),
+                        needs = emptySet(),
+                        type = SparkType.FIRE_AND_FORGET,
+                        coroutineContext = EmptyCoroutineContext,
+                        policy = SparkPolicy(importance = SparkImportance.CRITICAL),
+                        spark = spark
                     )
                 )
             )
@@ -199,20 +199,20 @@ class InitSparkTest {
         val config = SparkConfiguration(
             listOf(
                 SparkDeclaration(
-                    "shared".asKey(),
-                    setOf("first".asKey()),
-                    SparkType.TRACKABLE,
-                    EmptyCoroutineContext,
-                    SparkImportance.CRITICAL,
-                    shared
+                    key = "shared".asKey(),
+                    needs = setOf("first".asKey()),
+                    type = SparkType.TRACKABLE,
+                    coroutineContext = EmptyCoroutineContext,
+                    policy = SparkPolicy(importance = SparkImportance.CRITICAL),
+                    spark = shared
                 ),
                 SparkDeclaration(
-                    "first".asKey(),
-                    emptySet(),
-                    SparkType.AWAITABLE,
-                    EmptyCoroutineContext,
-                    SparkImportance.CRITICAL,
-                    first
+                    key = "first".asKey(),
+                    needs = emptySet(),
+                    type = SparkType.AWAITABLE,
+                    coroutineContext = EmptyCoroutineContext,
+                    policy = SparkPolicy(importance = SparkImportance.CRITICAL),
+                    spark = first
                 )
             )
         )
@@ -234,28 +234,28 @@ class InitSparkTest {
             val config = SparkConfiguration(
                 listOf(
                     SparkDeclaration(
-                        "dep".asKey(),
-                        emptySet(),
-                        SparkType.AWAITABLE,
-                        EmptyCoroutineContext,
-                        SparkImportance.CRITICAL,
-                        dep
+                        key = "dep".asKey(),
+                        needs = emptySet(),
+                        type = SparkType.AWAITABLE,
+                        coroutineContext = EmptyCoroutineContext,
+                        policy = SparkPolicy(importance = SparkImportance.CRITICAL),
+                        spark = dep
                     ),
                     SparkDeclaration(
-                        "a".asKey(),
-                        setOf("dep".asKey()),
-                        SparkType.TRACKABLE,
-                        EmptyCoroutineContext,
-                        SparkImportance.CRITICAL,
-                        a
+                        key = "a".asKey(),
+                        needs = setOf("dep".asKey()),
+                        type = SparkType.TRACKABLE,
+                        coroutineContext = EmptyCoroutineContext,
+                        policy = SparkPolicy(importance = SparkImportance.CRITICAL),
+                        spark = a
                     ),
                     SparkDeclaration(
-                        "b".asKey(),
-                        setOf("dep".asKey()),
-                        SparkType.FIRE_AND_FORGET,
-                        EmptyCoroutineContext,
-                        SparkImportance.CRITICAL,
-                        b
+                        key = "b".asKey(),
+                        needs = setOf("dep".asKey()),
+                        type = SparkType.FIRE_AND_FORGET,
+                        coroutineContext = EmptyCoroutineContext,
+                        policy = SparkPolicy(importance = SparkImportance.CRITICAL),
+                        spark = b
                     )
                 )
             )
@@ -275,28 +275,28 @@ class InitSparkTest {
         val config = SparkConfiguration(
             listOf(
                 SparkDeclaration(
-                    "a".asKey(),
-                    emptySet(),
-                    SparkType.AWAITABLE,
-                    EmptyCoroutineContext,
-                    SparkImportance.CRITICAL,
-                    a
+                    key = "a".asKey(),
+                    needs = emptySet(),
+                    type = SparkType.AWAITABLE,
+                    coroutineContext = EmptyCoroutineContext,
+                    policy = SparkPolicy(importance = SparkImportance.CRITICAL),
+                    spark = a
                 ),
                 SparkDeclaration(
-                    "b".asKey(),
-                    setOf("a".asKey()),
-                    SparkType.AWAITABLE,
-                    EmptyCoroutineContext,
-                    SparkImportance.CRITICAL,
-                    b
+                    key = "b".asKey(),
+                    needs = setOf("a".asKey()),
+                    type = SparkType.AWAITABLE,
+                    coroutineContext = EmptyCoroutineContext,
+                    policy = SparkPolicy(importance = SparkImportance.CRITICAL),
+                    spark = b
                 ),
                 SparkDeclaration(
-                    "c".asKey(),
-                    setOf("b".asKey()),
-                    SparkType.AWAITABLE,
-                    EmptyCoroutineContext,
-                    SparkImportance.CRITICAL,
-                    c
+                    key = "c".asKey(),
+                    needs = setOf("b".asKey()),
+                    type = SparkType.AWAITABLE,
+                    coroutineContext = EmptyCoroutineContext,
+                    policy = SparkPolicy(importance = SparkImportance.CRITICAL),
+                    spark = c
                 )
             )
         )
@@ -406,7 +406,7 @@ class InitSparkTest {
             coEvery { this@mockk.invoke() } throws error
         }
         val config = buildSparks(emptySet()) {
-            await("s".asKey(), importance = SparkImportance.OPTIONAL, spark = spark)
+            await(key = "s".asKey(), policy = SparkPolicy(importance = SparkImportance.OPTIONAL), spark = spark)
         }
         val initSpark = InitSpark(config, this)
 
@@ -416,5 +416,123 @@ class InitSparkTest {
             val failed = awaitItem() as SparkEvent.Failed
             assertEquals(error, failed.error)
         }
+    }
+
+    @Test
+    @Suppress("TooGenericExceptionThrown")
+    fun `GIVEN spark with retryCount WHEN fails twice and succeeds on third THEN initialization completes`() =
+        runTest {
+            val spark = mockk<Spark>()
+            var attempts = 0
+            coEvery { spark.invoke() } coAnswers {
+                attempts++
+                if (attempts < 3) throw RuntimeException("Fail $attempts")
+            }
+
+            val config = buildSparks(emptySet()) {
+                await(key = "retry".asKey(), policy = SparkPolicy(retry = RetryPolicy(2)), spark = spark)
+            }
+            val initSpark = InitSpark(config, this)
+
+            initSpark.events.test {
+                initSpark.initialize()
+                assertTrue(awaitItem() is SparkEvent.Started)
+                val retry1 = awaitItem() as SparkEvent.Retry
+                assertEquals(1, retry1.retryCount)
+                val retry2 = awaitItem() as SparkEvent.Retry
+                assertEquals(2, retry2.retryCount)
+                assertTrue(awaitItem() is SparkEvent.Completed)
+                expectNoEvents()
+            }
+
+            coVerify(exactly = 3) { spark.invoke() }
+        }
+
+    @Test
+    fun `GIVEN spark with retryCount WHEN all attempts fail THEN initialization fails`() = runTest {
+        val error = RuntimeException("Total failure")
+        val spark = mockk<Spark> {
+            coEvery { this@mockk.invoke() } throws error
+        }
+
+        val config = buildSparks(emptySet()) {
+            await(key = "fail".asKey(), policy = SparkPolicy(retry = RetryPolicy(2)), spark = spark)
+        }
+        val initSpark = InitSpark(config, this)
+
+        initSpark.events.test {
+            assertFailsWith<RuntimeException> {
+                initSpark.initialize()
+            }
+            assertTrue(awaitItem() is SparkEvent.Started)
+            assertTrue(awaitItem() is SparkEvent.Retry)
+            assertTrue(awaitItem() is SparkEvent.Retry)
+            val failed = awaitItem() as SparkEvent.Failed
+            assertEquals(error, failed.error)
+        }
+
+        coVerify(exactly = 3) { spark.invoke() }
+    }
+
+    @Test
+    fun `GIVEN spark with Fixed backoff WHEN retrying THEN delay is respected`() = runTest {
+        val spark = mockk<Spark> {
+            coEvery { this@mockk.invoke() } throws RuntimeException("Fail")
+        }
+
+        val config = buildSparks(emptySet()) {
+            await(
+                key = "delay".asKey(),
+                policy = SparkPolicy(retry = RetryPolicy(1, Backoff.Fixed(1000))),
+                spark = spark
+            )
+        }
+        val initSpark = InitSpark(config, this)
+
+        launch {
+            assertFailsWith<RuntimeException> {
+                initSpark.initialize()
+            }
+        }
+
+        advanceTimeBy(500)
+        coVerify(exactly = 1) { spark.invoke() } // Initial attempt
+
+        advanceTimeBy(600)
+        coVerify(exactly = 2) { spark.invoke() } // Retry after 1000ms
+    }
+
+    @Test
+    fun `GIVEN spark with Exponential backoff WHEN retrying THEN delay increases`() = runTest {
+        val spark = mockk<Spark> {
+            coEvery { this@mockk.invoke() } throws RuntimeException("Fail")
+        }
+
+        val config = buildSparks(emptySet()) {
+            await(
+                key = "expo".asKey(),
+                policy = SparkPolicy(retry = RetryPolicy(2, Backoff.Exponential(1000, 2.0))),
+                spark = spark
+            )
+        }
+        val initSpark = InitSpark(config, this)
+
+        launch {
+            assertFailsWith<RuntimeException> {
+                initSpark.initialize()
+            }
+        }
+
+        advanceTimeBy(500)
+        coVerify(exactly = 1) { spark.invoke() } // Initial attempt
+
+        advanceTimeBy(600)
+        coVerify(exactly = 2) { spark.invoke() } // First retry after 1000ms
+
+        advanceTimeBy(1500)
+        coVerify(exactly = 2) { spark.invoke() } // Still waiting for second retry (need 2000ms more)
+
+        advanceTimeBy(600)
+        coVerify(exactly = 3) { spark.invoke() } // Second retry after 2000ms more
     }
 }
