@@ -4,44 +4,58 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.ajoberstar.grgit.Grgit
 
 plugins {
-    alias(libs.plugins.jetbrains.kotlin.jvm)
+    alias(libs.plugins.jetbrains.kotlin.multiplatform)
     alias(libs.plugins.dokka)
     alias(libs.plugins.detekt)
     alias(libs.plugins.kover)
     alias(libs.plugins.grgit)
     id("maven-publish")
 }
+
 group = "com.github.ktomek"
 version = getGitTagVersion()
-java {
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
-}
+base.archivesName.set("initspark")
+
 kotlin {
-    compilerOptions {
-        jvmTarget = JvmTarget.JVM_17
-        freeCompilerArgs.add("-XXLanguage:+ExplicitBackingFields")
-    }
     jvmToolchain(17)
-
-}
-
-tasks.test {
-    useJUnitPlatform()
+    
+    jvm {
+        compilerOptions {
+            jvmTarget = JvmTarget.JVM_17
+            freeCompilerArgs.add("-XXLanguage:+ExplicitBackingFields")
+        }
+    }
+    
+    iosX64()
+    iosArm64()
+    iosSimulatorArm64()
+    
+    sourceSets {
+        commonMain.dependencies {
+            implementation(libs.kotlin.stdlib)
+            implementation(libs.kotlinx.coroutines.core)
+            implementation(libs.funktional)
+        }
+        
+        commonTest.dependencies {
+            implementation(kotlin("test"))
+            implementation(libs.kotlinx.coroutines.test)
+            implementation(libs.turbine)
+        }
+        
+        jvmTest.dependencies {
+            implementation(libs.junit.jupiter)
+            implementation(libs.mockk)
+        }
+    }
 }
 
 dependencies {
-    implementation(libs.kotlin.stdlib)
-    implementation(libs.kotlinx.coroutines.core)
-    implementation(libs.funktional)
-
-    testImplementation(kotlin("test"))
-    testImplementation(libs.junit.jupiter)
-    testImplementation(libs.mockk)
-    testImplementation(libs.kotlinx.coroutines.test)
-    testImplementation(libs.turbine)
-
     detektPlugins(libs.detekt.formatting)
+}
+
+tasks.withType<Test>().configureEach {
+    useJUnitPlatform()
 }
 
 tasks.register<Jar>("javadocJar") {
@@ -49,25 +63,20 @@ tasks.register<Jar>("javadocJar") {
     from(tasks.dokkaHtml)
 }
 
-// Create a JAR of the source files
-val sourceJar by tasks.registering(Jar::class) {
-    archiveClassifier.set("sources")
-    from(sourceSets.main.get().allSource)
-}
-
 publishing {
-    publications {
-        create<MavenPublication>("mavenJava") {
-            from(components["java"])
-            artifact(tasks.named("sourceJar"))
-            artifact(tasks.named("javadocJar"))
+    publications.withType<MavenPublication>().configureEach {
+        // Kotlin Multiplatform automatically sets up artifactIds like initspark-jvm, etc.
+        // We ensure that if the base artifact is "lib", we change it to "initspark" just in case.
+        if (artifactId.startsWith("lib")) {
+            artifactId = artifactId.replaceFirst("lib", "initspark")
+        }
 
-            pom {
-                name.set("InitSpark")
-                description.set("Startup orchestration for Kotlin-based apps")
-                url.set("https://github.com/ktomek/initspark")
-                artifactId = "initspark"
-            }
+        artifact(tasks.named("javadocJar"))
+
+        pom {
+            name.set("InitSpark")
+            description.set("Startup orchestration for Kotlin-based apps")
+            url.set("https://github.com/ktomek/initspark")
         }
     }
 }

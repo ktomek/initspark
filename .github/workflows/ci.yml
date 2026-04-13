@@ -37,13 +37,13 @@ jobs:
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
     - name: Run Tests
-      run: ./gradlew test --no-daemon
+      run: ./gradlew allTests --no-daemon
     - name: Upload Test Results
       if: failure()
       uses: actions/upload-artifact@v4
       with:
         name: test-results
-        path: lib/build/reports/tests/test/
+        path: lib/build/reports/tests/
     - name: Generate Test Coverage Report
       run: ./gradlew koverXmlReport --no-daemon
     - name: Upload coverage to Codecov
