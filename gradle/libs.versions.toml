@@ -1,6 +1,6 @@
 [versions]
 detektFormatting = "1.23.8"
-funktional = "1.0.1"
+funktional = "1.1.0"
 junitJupiter = "6.0.3"
 kotlin = "2.3.0"
 kotlinxCoroutinesCore = "1.10.2"
