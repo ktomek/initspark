@@ -93,6 +93,12 @@ mavenPublishing {
 // Kotlin DSL
 tasks.withType<Detekt>().configureEach {
     jvmTarget = "1.8"
+    reports {
+        html.required.set(true)
+        xml.required.set(true)
+        txt.required.set(false)
+        sarif.required.set(true)
+    }
 }
 tasks.withType<DetektCreateBaselineTask>().configureEach {
     jvmTarget = "1.8"
@@ -111,6 +117,7 @@ detekt {
     config.setFrom(file("../config/detekt-config.yml"))
     buildUponDefaultConfig = true
     autoCorrect = true
+    source.setFrom("src/commonMain/kotlin")
 }
 
 fun getGitTagVersion(): String = runCatching {

@@ -1,8 +1,6 @@
 package com.github.ktomek.initspark
 
 import com.github.ktomek.funktional.lift
-import com.github.ktomek.funktional.onNull
-import com.github.ktomek.funktional.orDefault
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlin.concurrent.Volatile
@@ -16,11 +14,14 @@ internal class SparkTimer(private val timeProvider: TimeProvider = DefaultTimePr
     SparkTimingInfo {
     @Volatile
     private var timings = mapOf<SparkDeclaration, Duration>()
+
     @Volatile
     private var startTimes = mapOf<SparkDeclaration, TimeMark>()
     private var firstStartTime: TimeMark? = null
+
     @Volatile
     private var totalExecutionDeltaDuration: Duration? = null
+
     @Volatile
     private var typeExecutionDeltaMarks = mapOf<SparkType, Pair<TimeMark, Duration?>>()
     private val mutex = Mutex()

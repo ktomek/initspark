@@ -80,7 +80,7 @@ jobs:
           path: lib/build/reports/detekt/detekt.html
 
       - name: Upload SARIF
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: success() || failure()
         with:
           sarif_file: lib/build/reports/detekt/detekt.sarif
