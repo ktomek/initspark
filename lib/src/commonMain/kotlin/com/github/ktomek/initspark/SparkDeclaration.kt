@@ -3,6 +3,7 @@ package com.github.ktomek.initspark
 import com.github.ktomek.initspark.SparkType.FIRE_AND_FORGET
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
+import kotlin.jvm.JvmInline
 
 /**
  * Represents a unique identifier for a Spark within a SparkConfiguration.

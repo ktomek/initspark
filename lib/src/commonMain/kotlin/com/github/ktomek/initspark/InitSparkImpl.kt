@@ -22,7 +22,8 @@ import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.retryWhen
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import java.util.concurrent.atomic.AtomicBoolean
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlin.time.Duration
 
 @Suppress("TooManyFunctions")
@@ -39,19 +40,23 @@ internal class InitSparkImpl(
      */
     override val timing: SparkTimingInfo = SparkTimer.getInstance()
     private val sparkTimer: SparkTimer = SparkTimer.getInstance()
-    private val isStarted = AtomicBoolean(false)
+    private var isStarted = false
+    private val initMutex = Mutex()
 
-    final override val isTrackableInitialized: StateFlow<Boolean>
-        field: MutableStateFlow<Boolean> = MutableStateFlow(false)
+    private val _isTrackableInitialized = MutableStateFlow(false)
+    final override val isTrackableInitialized: StateFlow<Boolean> get() = _isTrackableInitialized
 
-    final override val isInitialized: StateFlow<Boolean>
-        field: MutableStateFlow<Boolean> = MutableStateFlow(false)
+    private val _isInitialized = MutableStateFlow(false)
+    final override val isInitialized: StateFlow<Boolean> get() = _isInitialized
 
-    final override val events: SharedFlow<SparkEvent>
-        field: MutableSharedFlow<SparkEvent> = MutableSharedFlow()
+    private val _events = MutableSharedFlow<SparkEvent>()
+    final override val events: SharedFlow<SparkEvent> get() = _events
 
     override suspend fun initialize() {
-        if (!isStarted.compareAndSet(false, true)) return
+        initMutex.withLock {
+            if (isStarted) return
+            isStarted = true
+        }
         coroutineScope {
             startAwaitable()
             with(createAndRunSparksJobs()) {
@@ -60,7 +65,7 @@ internal class InitSparkImpl(
                         launch { startAsyncSparks(this@with) }
                         launch { startRunAndForgetSparks(this@with) }
                     }
-                    isInitialized.value = true
+                    _isInitialized.value = true
                 }
             }
         }
@@ -101,7 +106,7 @@ internal class InitSparkImpl(
     }
 
     private suspend fun SparkDeclaration.emitRetry(cause: Throwable, attempt: Int) =
-        events.emit(
+        _events.emit(
             SparkEvent.Retry(
                 key = key,
                 retryCount = attempt,
@@ -112,7 +117,7 @@ internal class InitSparkImpl(
             )
         )
 
-    private suspend fun SparkDeclaration.emitCompleted() = events
+    private suspend fun SparkDeclaration.emitCompleted() = _events
         .emit(
             SparkEvent.Completed(
                 key = key,
@@ -124,7 +129,7 @@ internal class InitSparkImpl(
 
     private suspend fun SparkDeclaration.emitFailed(e: Throwable) {
         if (e is CancellationException) throw e
-        events.emit(
+        _events.emit(
             SparkEvent.Failed(
                 key = key,
                 error = e,
@@ -137,7 +142,7 @@ internal class InitSparkImpl(
     }
 
     private suspend fun SparkDeclaration.emitStarted() =
-        events.emit(SparkEvent.Started(key))
+        _events.emit(SparkEvent.Started(key))
 
     private suspend fun startAwaitable() = config
         .declarations
@@ -151,7 +156,7 @@ internal class InitSparkImpl(
             .map(SparkDeclaration::key)
             .mapNotNull(jobs::get)
             .awaitAll()
-        isTrackableInitialized.value = true
+        _isTrackableInitialized.value = true
     }
 
     private suspend fun startRunAndForgetSparks(jobs: Map<Key, Deferred<Unit>>) {

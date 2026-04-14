@@ -4,12 +4,33 @@
 ![GitHub release](https://img.shields.io/github/v/release/ktomek/initspark)
 ![GitHub issues](https://img.shields.io/github/issues/ktomek/initspark)
 ![GitHub pull requests](https://img.shields.io/github/issues-pr/ktomek/initspark)
-[![JitPack](https://jitpack.io/v/ktomek/initspark.svg)](https://jitpack.io/#ktomek/initspark)
+[![Maven Central](https://img.shields.io/maven-central/v/com.github.ktomek/initspark.svg)](https://central.sonatype.com/artifact/com.github.ktomek/initspark)
 
 
 # InitSpark
 
-**InitSpark** is a lightweight, coroutine-based startup orchestration library for Kotlin applications. It provides a structured way to declare, sequence, and execute initialization tasks (called *sparks*) during your app's startup phase.
+**InitSpark** is a lightweight, Kotlin Multiplatform (KMP) coroutine-based startup orchestration library. It provides a structured way to declare, sequence, and execute initialization tasks (called *sparks*) during your app's startup phase across JVM, Android, and iOS natively.
+
+## Installation
+
+InitSpark is published to Maven Central. 
+
+Add the dependency to your `build.gradle.kts`:
+
+```kotlin
+sourceSets {
+    commonMain.dependencies {
+        implementation("com.github.ktomek:initspark:1.0.0") // Replace with latest version
+    }
+}
+```
+
+For JVM or Android-only projects:
+```kotlin
+dependencies {
+    implementation("com.github.ktomek:initspark:1.0.0")
+}
+```
 
 ## Features
 

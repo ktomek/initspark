@@ -1,73 +1,91 @@
+import com.vanniktech.maven.publish.SonatypeHost
 import io.gitlab.arturbosch.detekt.Detekt
 import io.gitlab.arturbosch.detekt.DetektCreateBaselineTask
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.ajoberstar.grgit.Grgit
 
 plugins {
-    alias(libs.plugins.jetbrains.kotlin.jvm)
+    alias(libs.plugins.jetbrains.kotlin.multiplatform)
     alias(libs.plugins.dokka)
     alias(libs.plugins.detekt)
     alias(libs.plugins.kover)
     alias(libs.plugins.grgit)
-    id("maven-publish")
+    alias(libs.plugins.vanniktech.maven.publish)
 }
+
 group = "com.github.ktomek"
-version = getGitTagVersion()
-java {
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
-}
+version = project.findProperty("publishVersion") as String? ?: getGitTagVersion()
+base.archivesName.set("initspark")
+
 kotlin {
-    compilerOptions {
-        jvmTarget = JvmTarget.JVM_17
-        freeCompilerArgs.add("-XXLanguage:+ExplicitBackingFields")
-    }
     jvmToolchain(17)
-
-}
-
-tasks.test {
-    useJUnitPlatform()
+    
+    jvm {
+        compilerOptions {
+            jvmTarget = JvmTarget.JVM_17
+            freeCompilerArgs.add("-XXLanguage:+ExplicitBackingFields")
+        }
+    }
+    
+    iosX64()
+    iosArm64()
+    iosSimulatorArm64()
+    
+    sourceSets {
+        commonMain.dependencies {
+            implementation(libs.kotlin.stdlib)
+            implementation(libs.kotlinx.coroutines.core)
+            implementation(libs.funktional)
+        }
+        
+        commonTest.dependencies {
+            implementation(kotlin("test"))
+            implementation(libs.kotlinx.coroutines.test)
+            implementation(libs.turbine)
+        }
+        
+        jvmTest.dependencies {
+            implementation(libs.junit.jupiter)
+            implementation(libs.mockk)
+        }
+    }
 }
 
 dependencies {
-    implementation(libs.kotlin.stdlib)
-    implementation(libs.kotlinx.coroutines.core)
-    implementation(libs.funktional)
-
-    testImplementation(kotlin("test"))
-    testImplementation(libs.junit.jupiter)
-    testImplementation(libs.mockk)
-    testImplementation(libs.kotlinx.coroutines.test)
-    testImplementation(libs.turbine)
-
     detektPlugins(libs.detekt.formatting)
 }
 
-tasks.register<Jar>("javadocJar") {
-    archiveClassifier.set("javadoc")
-    from(tasks.dokkaHtml)
+tasks.withType<Test>().configureEach {
+    useJUnitPlatform()
 }
 
-// Create a JAR of the source files
-val sourceJar by tasks.registering(Jar::class) {
-    archiveClassifier.set("sources")
-    from(sourceSets.main.get().allSource)
-}
+mavenPublishing {
+    publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL)
+    signAllPublications()
 
-publishing {
-    publications {
-        create<MavenPublication>("mavenJava") {
-            from(components["java"])
-            artifact(tasks.named("sourceJar"))
-            artifact(tasks.named("javadocJar"))
+    coordinates("com.github.ktomek", "initspark", version.toString())
 
-            pom {
-                name.set("InitSpark")
-                description.set("Startup orchestration for Kotlin-based apps")
-                url.set("https://github.com/ktomek/initspark")
-                artifactId = "initspark"
+    pom {
+        name.set("InitSpark")
+        description.set("Startup orchestration for Kotlin-based apps")
+        url.set("https://github.com/ktomek/initspark")
+        licenses {
+            license {
+                name.set("MIT License")
+                url.set("https://opensource.org/licenses/MIT")
             }
+        }
+        developers {
+            developer {
+                id.set("ktomek")
+                name.set("ktomek")
+                url.set("https://github.com/ktomek")
+            }
+        }
+        scm {
+            url.set("https://github.com/ktomek/initspark")
+            connection.set("scm:git:git://github.com/ktomek/initspark.git")
+            developerConnection.set("scm:git:ssh://git@github.com/ktomek/initspark.git")
         }
     }
 }
@@ -75,6 +93,12 @@ publishing {
 // Kotlin DSL
 tasks.withType<Detekt>().configureEach {
     jvmTarget = "1.8"
+    reports {
+        html.required.set(true)
+        xml.required.set(true)
+        txt.required.set(false)
+        sarif.required.set(true)
+    }
 }
 tasks.withType<DetektCreateBaselineTask>().configureEach {
     jvmTarget = "1.8"
@@ -93,6 +117,7 @@ detekt {
     config.setFrom(file("../config/detekt-config.yml"))
     buildUponDefaultConfig = true
     autoCorrect = true
+    source.setFrom("src/commonMain/kotlin")
 }
 
 fun getGitTagVersion(): String = runCatching {
