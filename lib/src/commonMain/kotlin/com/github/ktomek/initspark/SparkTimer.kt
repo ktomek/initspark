@@ -5,6 +5,7 @@ import com.github.ktomek.funktional.onNull
 import com.github.ktomek.funktional.orDefault
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlin.concurrent.Volatile
 import kotlin.time.Duration
 import kotlin.time.TimeMark
 
@@ -13,11 +14,15 @@ import kotlin.time.TimeMark
  */
 internal class SparkTimer(private val timeProvider: TimeProvider = DefaultTimeProvider) :
     SparkTimingInfo {
-    private val timings = mutableMapOf<SparkDeclaration, Duration>()
-    private val startTimes = mutableMapOf<SparkDeclaration, TimeMark>()
-    private lateinit var firstStartTime: TimeMark
+    @Volatile
+    private var timings = mapOf<SparkDeclaration, Duration>()
+    @Volatile
+    private var startTimes = mapOf<SparkDeclaration, TimeMark>()
+    private var firstStartTime: TimeMark? = null
+    @Volatile
     private var totalExecutionDeltaDuration: Duration? = null
-    private val typeExecutionDeltaMarks = mutableMapOf<SparkType, Pair<TimeMark, Duration?>>()
+    @Volatile
+    private var typeExecutionDeltaMarks = mapOf<SparkType, Pair<TimeMark, Duration?>>()
     private val mutex = Mutex()
 
     /**
@@ -28,13 +33,14 @@ internal class SparkTimer(private val timeProvider: TimeProvider = DefaultTimePr
     suspend fun start(declaration: SparkDeclaration) {
         mutex.withLock {
             val now = timeProvider.markNow()
-            startTimes[declaration] = now
-            if (!this::firstStartTime.isInitialized) {
+            startTimes = startTimes + (declaration to now)
+            if (firstStartTime == null) {
                 firstStartTime = now
             }
             val type = declaration.type
-            val (startMark, duration) = typeExecutionDeltaMarks[type].orDefault { null to null }
-            startMark.onNull { typeExecutionDeltaMarks[type] = now to duration }
+            if (typeExecutionDeltaMarks[type] == null) {
+                typeExecutionDeltaMarks = typeExecutionDeltaMarks + (type to (now to null))
+            }
         }
     }
 
@@ -46,14 +52,15 @@ internal class SparkTimer(private val timeProvider: TimeProvider = DefaultTimePr
      */
     suspend fun stop(declaration: SparkDeclaration) {
         mutex.withLock {
-            val mark = startTimes.remove(declaration)
+            val mark = startTimes[declaration]
                 ?: error("Timer was not started for declaration: $declaration")
-            timings[declaration] = mark.elapsedNow()
-            totalExecutionDeltaDuration = firstStartTime.elapsedNow()
+            startTimes = startTimes - declaration
+            timings = timings + (declaration to mark.elapsedNow())
+            totalExecutionDeltaDuration = firstStartTime?.elapsedNow()
 
             val type = declaration.type
-            val (startMark, _) = typeExecutionDeltaMarks[type] ?: (mark to null)
-            typeExecutionDeltaMarks[type] = startMark to startMark.elapsedNow()
+            val startMark = typeExecutionDeltaMarks[type]?.first ?: mark
+            typeExecutionDeltaMarks = typeExecutionDeltaMarks + (type to (startMark to startMark.elapsedNow()))
         }
     }
 
