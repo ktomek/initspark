@@ -13,7 +13,7 @@ plugins {
     alias(libs.plugins.vanniktech.maven.publish)
 }
 
-group = "com.github.ktomek"
+group = "io.github.ktomekk"
 version = project.findProperty("publishVersion") as String? ?: getGitTagVersion()
 base.archivesName.set("initspark")
 
@@ -63,7 +63,7 @@ mavenPublishing {
     publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL)
     signAllPublications()
 
-    coordinates("com.github.ktomek", "initspark", version.toString())
+    coordinates("io.github.ktomekk", "initspark", version.toString())
 
     pom {
         name.set("InitSpark")

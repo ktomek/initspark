@@ -4,7 +4,7 @@
 ![GitHub release](https://img.shields.io/github/v/release/ktomek/initspark)
 ![GitHub issues](https://img.shields.io/github/issues/ktomek/initspark)
 ![GitHub pull requests](https://img.shields.io/github/issues-pr/ktomek/initspark)
-[![Maven Central](https://img.shields.io/maven-central/v/com.github.ktomek/initspark.svg)](https://central.sonatype.com/artifact/com.github.ktomek/initspark)
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.ktomekk/initspark.svg)](https://central.sonatype.com/artifact/io.github.ktomekk/initspark)
 
 
 # InitSpark
@@ -20,7 +20,7 @@ Add the dependency to your `build.gradle.kts`:
 ```kotlin
 sourceSets {
     commonMain.dependencies {
-        implementation("com.github.ktomek:initspark:1.0.0") // Replace with latest version
+        implementation("io.github.ktomekk:initspark:1.0.0") // Replace with latest version
     }
 }
 ```
@@ -28,7 +28,7 @@ sourceSets {
 For JVM or Android-only projects:
 ```kotlin
 dependencies {
-    implementation("com.github.ktomek:initspark:1.0.0")
+    implementation("io.github.ktomekk:initspark:1.0.0")
 }
 ```
 
