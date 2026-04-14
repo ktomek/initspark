@@ -29,7 +29,7 @@ fun buildSparks(
         declarations.checkCycles()
         sparks.forEach { spark ->
             require(declarations.any { it.spark == spark }) {
-                "Not all sparks has been registered ${spark.javaClass.name}"
+                "Not all sparks has been registered ${spark::class.simpleName}"
             }
         }
     }

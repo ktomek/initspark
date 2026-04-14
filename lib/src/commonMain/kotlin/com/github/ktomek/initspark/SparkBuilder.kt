@@ -154,7 +154,7 @@ class SparkBuilder internal constructor(val sparks: Set<Spark>) {
         context: CoroutineContext,
         policy: SparkPolicy
     ): SparkDeclaration = SparkDeclaration(
-        key = key ?: javaClass.simpleName.asKey(),
+        key = key ?: (this::class.simpleName ?: "Spark").asKey(),
         needs = needs,
         type = type,
         coroutineContext = context,

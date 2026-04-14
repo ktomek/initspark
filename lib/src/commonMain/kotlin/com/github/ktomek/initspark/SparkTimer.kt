@@ -5,7 +5,6 @@ import com.github.ktomek.funktional.onNull
 import com.github.ktomek.funktional.orDefault
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import java.util.concurrent.ConcurrentHashMap
 import kotlin.time.Duration
 import kotlin.time.TimeMark
 
@@ -14,11 +13,11 @@ import kotlin.time.TimeMark
  */
 internal class SparkTimer(private val timeProvider: TimeProvider = DefaultTimeProvider) :
     SparkTimingInfo {
-    private val timings = ConcurrentHashMap<SparkDeclaration, Duration>()
-    private val startTimes = ConcurrentHashMap<SparkDeclaration, TimeMark>()
+    private val timings = mutableMapOf<SparkDeclaration, Duration>()
+    private val startTimes = mutableMapOf<SparkDeclaration, TimeMark>()
     private lateinit var firstStartTime: TimeMark
     private var totalExecutionDeltaDuration: Duration? = null
-    private val typeExecutionDeltaMarks = ConcurrentHashMap<SparkType, Pair<TimeMark, Duration?>>()
+    private val typeExecutionDeltaMarks = mutableMapOf<SparkType, Pair<TimeMark, Duration?>>()
     private val mutex = Mutex()
 
     /**
@@ -96,17 +95,9 @@ internal class SparkTimer(private val timeProvider: TimeProvider = DefaultTimePr
         .toMap()
 
     internal companion object {
-        @Volatile
-        private var instance: SparkTimer? = null
+        private val INSTANCE by lazy { SparkTimer() }
 
-        fun getInstance(): SparkTimer =
-            instance.orDefault {
-                synchronized(this) {
-                    instance
-                        .orDefault { SparkTimer() }
-                        .also { instance = it }
-                }
-            }
+        fun getInstance(): SparkTimer = INSTANCE
     }
 }
 

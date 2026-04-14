@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     steps:
     - name: Checkout Code
       uses: actions/checkout@v3
@@ -24,7 +24,7 @@ jobs:
       run: ./gradlew build --no-daemon
 
   test:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     needs: build
     steps:
     - name: Checkout Code
@@ -55,7 +55,7 @@ jobs:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   detekt:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     needs: build
     steps:
       - name: Checkout Code
