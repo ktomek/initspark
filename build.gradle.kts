@@ -6,4 +6,5 @@ plugins {
     alias(libs.plugins.detekt)
     alias(libs.plugins.kover)
     alias(libs.plugins.grgit)
+    alias(libs.plugins.vanniktech.maven.publish) apply false
 }

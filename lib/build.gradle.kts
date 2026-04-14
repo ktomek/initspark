@@ -1,3 +1,4 @@
+import com.vanniktech.maven.publish.SonatypeHost
 import io.gitlab.arturbosch.detekt.Detekt
 import io.gitlab.arturbosch.detekt.DetektCreateBaselineTask
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
@@ -9,11 +10,11 @@ plugins {
     alias(libs.plugins.detekt)
     alias(libs.plugins.kover)
     alias(libs.plugins.grgit)
-    id("maven-publish")
+    alias(libs.plugins.vanniktech.maven.publish)
 }
 
 group = "com.github.ktomek"
-version = getGitTagVersion()
+version = project.findProperty("publishVersion") as String? ?: getGitTagVersion()
 base.archivesName.set("initspark")
 
 kotlin {
@@ -58,25 +59,33 @@ tasks.withType<Test>().configureEach {
     useJUnitPlatform()
 }
 
-tasks.register<Jar>("javadocJar") {
-    archiveClassifier.set("javadoc")
-    from(tasks.dokkaHtml)
-}
+mavenPublishing {
+    publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL)
+    signAllPublications()
 
-publishing {
-    publications.withType<MavenPublication>().configureEach {
-        // Kotlin Multiplatform automatically sets up artifactIds like initspark-jvm, etc.
-        // We ensure that if the base artifact is "lib", we change it to "initspark" just in case.
-        if (artifactId.startsWith("lib")) {
-            artifactId = artifactId.replaceFirst("lib", "initspark")
+    coordinates("com.github.ktomek", "initspark", version.toString())
+
+    pom {
+        name.set("InitSpark")
+        description.set("Startup orchestration for Kotlin-based apps")
+        url.set("https://github.com/ktomek/initspark")
+        licenses {
+            license {
+                name.set("MIT License")
+                url.set("https://opensource.org/licenses/MIT")
+            }
         }
-
-        artifact(tasks.named("javadocJar"))
-
-        pom {
-            name.set("InitSpark")
-            description.set("Startup orchestration for Kotlin-based apps")
+        developers {
+            developer {
+                id.set("ktomek")
+                name.set("ktomek")
+                url.set("https://github.com/ktomek")
+            }
+        }
+        scm {
             url.set("https://github.com/ktomek/initspark")
+            connection.set("scm:git:git://github.com/ktomek/initspark.git")
+            developerConnection.set("scm:git:ssh://git@github.com/ktomek/initspark.git")
         }
     }
 }
